@@ -1,0 +1,190 @@
+class CanvasManager {
+    constructor(parent) {
+        this.parent = parent;
+        this.canvasElement = document.createElement("canvas");
+        this.canvasCtx = this.canvasElement.getContext('2d');
+        this.canvasElement.classList.add("canvasElement")
+        this.parent.appendChild(this.canvasElement)
+        this.parent.addEventListener("resize", (e) => {
+            this.fitCanvasElement();
+        });
+        window.onresize = (e) => {
+            this.fitCanvasElement();
+        };
+        this.strokeProperties = {
+            color: "red",
+            thickness: 5,
+            join: "round",
+            cap: "round"
+        }
+        this.strokes = [];
+        this.compressMethods = ["prune", "smooth"];
+        this.controlManager();
+        this.penDown = false;
+        this.fitCanvasElement();
+    }
+
+    clearCanvas(){
+        this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+    }
+
+    render() {
+        for (let stroke of this.strokes) {
+            stroke.drawStroke();
+        }
+    }
+
+    controlManager() {
+        this.canvasElement.addEventListener("mousedown", (e) => {
+            this.penDown = true;
+            let x = e.x;
+            let y = e.y;
+            this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties));
+            let stroke = this.strokes.at(-1)
+            stroke.add(new Point(x, y));
+            stroke.drawStroke();
+        })
+        this.canvasElement.addEventListener("mouseup", (e) => {
+            this.penDown = false;
+            console.log(this.strokes.at(-1).points.length);
+            this.strokes.at(-1).compress(this.compressMethods);
+            console.log(this.strokes.at(-1).points.length);
+            this.clearCanvas();
+            this.render();
+
+        })
+        this.canvasElement.addEventListener("mousemove", (e) => {
+            if (this.penDown) {
+                let x = e.x;
+                let y = e.y;
+                let stroke = this.strokes.at(-1)
+                stroke.add(new Point(x, y));
+                stroke.drawStroke();
+            }
+        })
+    }
+
+    fitCanvasElement() {
+        this.canvasElement.height = this.parent.offsetHeight;
+        this.canvasElement.width = this.parent.offsetWidth;
+        this.render();
+    }
+}
+
+class Stroke {
+    constructor(points = [], canvasCtx, strokeProperties) {
+        this.points = [...points];
+        this.canvasCtx = canvasCtx;
+        this.strokeProperties = strokeProperties;
+    }
+
+    add(point) {
+        this.points.push(point)
+    }
+
+    drawStroke(canvasCtx = this.canvasCtx) {
+        canvasCtx.beginPath();
+        for (let point of this.points) {
+            canvasCtx.lineTo(...point.coord);
+            canvasCtx.moveTo(...point.coord);
+        }
+        canvasCtx.moveTo(...this.points.at(-1).coord);
+        canvasCtx.strokeStyle = this.strokeProperties.color;
+        canvasCtx.lineWidth = this.strokeProperties.thickness;
+        canvasCtx.lineJoin = this.strokeProperties.join;
+        canvasCtx.lineCap = this.strokeProperties.cap;
+        canvasCtx.closePath();
+        canvasCtx.stroke();
+    }
+    compress(methods = ["prune"]){
+        let auxPath = this.points;
+        for(let method of methods){
+            auxPath = StrokeCompressor[method + "Path"](auxPath);
+        }
+        this.points = auxPath;
+    }
+}
+
+class Point {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+        this.coord = [x, y];
+    }
+}
+
+class StrokeCompressor {
+    static EPSILON = Math.PI/50;
+    static PRUNE_DEPTH = 2;
+    static DELTA = 5;
+    static prunePath(path, depth = (StrokeCompressor.PRUNE_DEPTH || Infinity)) {
+        depth = depth - 1;
+        let auxPathArray = [];
+        for (let coordIndex in path) {
+            coordIndex = parseInt(coordIndex);
+            let currCoord = path[coordIndex];
+
+            if ((coordIndex == 0) || (coordIndex == (path.length - 1))) {
+                auxPathArray.push(currCoord);
+                continue;
+            }
+
+            if (dist(...auxPathArray[auxPathArray.length - 1].coord, ...currCoord.coord) <= StrokeCompressor.DELTA) {
+                continue;
+            }
+
+            let prevCoord = path[coordIndex - 1];
+            let nextCoord = path[coordIndex + 1];
+            let angleOfDeviation = StrokeCompressor.calculateDeviation(prevCoord, currCoord, nextCoord)
+            if (angleOfDeviation >= StrokeCompressor.EPSILON) {
+                auxPathArray.push(currCoord);
+            }
+        }
+        if ((auxPathArray.length === path.length) || (depth == 0)) {
+            return auxPathArray
+        }
+        return StrokeCompressor.prunePath(auxPathArray, depth);
+    }
+
+    static smoothPath(path, kernelSize = 1) {
+        if (kernelSize == 0) {
+            return path;
+        }
+        let auxPathArray = [];
+        for (let i = 0; i < kernelSize; i++) {
+            auxPathArray.push(path[i]);
+        }
+        for (let i = kernelSize; i < path.length - kernelSize; i++) {
+            let pathSegment = []
+            for (let j = -1 * kernelSize; j <= kernelSize; j++) {
+                pathSegment.push(path[i + j].coord);
+            }
+            console.log(pathSegment)
+            let averagePoint = pathSegment.reduce((a, c) => {
+                return [a[0] + c[0], a[1] + c[1]];
+            }, [0, 0]).map(e => e / (kernelSize + 2))
+            auxPathArray.push(new Point(...averagePoint));
+        }
+        for (let i = path.length - kernelSize; i < path.length; i++) {
+            auxPathArray.push(path[i]);
+        }
+        return auxPathArray;
+    }
+
+    static calculateDeviation(coord1, coord2, coord3) {
+        let a = dist(...coord1.coord, ...coord2.coord);
+        let b = dist(...coord2.coord, ...coord3.coord);
+        let c = dist(...coord1.coord, ...coord3.coord);
+        let numerator = (a ** 2) + (b ** 2) - (c ** 2);
+        let denominator = 2 * a * b;
+        let fraction = numerator / denominator;
+        let deviation = Math.PI/2 + Math.asin(fraction);
+        return deviation;
+    }
+}
+
+function dist(x1, y1, x2, y2){
+    let dx = x2 - x1;
+    let dy = y2 - y1;
+    return Math.sqrt(dx**2 + dy**2);
+}
