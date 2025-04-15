@@ -1,3 +1,5 @@
+let compressionRatios = []
+
 class CanvasManager {
     constructor(parent) {
         this.parent = parent;
@@ -18,7 +20,7 @@ class CanvasManager {
             cap: "round"
         }
         this.strokes = [];
-        this.compressMethods = ["prune", "smooth"];
+        this.compressMethods = ["prune"];
         this.controlManager();
         this.penDown = false;
         this.fitCanvasElement();
@@ -44,14 +46,30 @@ class CanvasManager {
             stroke.add(new Point(x, y));
             stroke.drawStroke();
         })
+        this.parent.addEventListener("mouseleave", (e) => {
+            if(this.penDown){
+                this.penDown = false;
+                if(this.strokes.length != 0){
+                    this.strokes.at(-1).compress(this.compressMethods);
+                }
+                this.clearCanvas();
+                this.render();
+            }
+        })
         this.canvasElement.addEventListener("mouseup", (e) => {
-            this.penDown = false;
-            console.log(this.strokes.at(-1).points.length);
-            this.strokes.at(-1).compress(this.compressMethods);
-            console.log(this.strokes.at(-1).points.length);
-            this.clearCanvas();
-            this.render();
-
+            if (this.penDown) {
+                this.penDown = false;
+                if(this.strokes.length != 0){
+                    let originalCount = this.strokes.at(-1).points.length;
+                    // console.log(this.strokes.at(-1).points.length);
+                    this.strokes.at(-1).compress(this.compressMethods);
+                    // console.log(this.strokes.at(-1).points.length);
+                    compressionRatios.push(originalCount/(this.strokes.at(-1).points.length))
+                    console.log(compressionRatios.reduce((a,c) => a + c)/compressionRatios.length)
+                }
+                this.clearCanvas();
+                this.render();
+            }
         })
         this.canvasElement.addEventListener("mousemove", (e) => {
             if (this.penDown) {
@@ -115,7 +133,7 @@ class Point {
 
 class StrokeCompressor {
     static EPSILON = Math.PI/50;
-    static PRUNE_DEPTH = 2;
+    static PRUNE_DEPTH = 3;
     static DELTA = 5;
     static prunePath(path, depth = (StrokeCompressor.PRUNE_DEPTH || Infinity)) {
         depth = depth - 1;
@@ -187,4 +205,13 @@ function dist(x1, y1, x2, y2){
     let dx = x2 - x1;
     let dy = y2 - y1;
     return Math.sqrt(dx**2 + dy**2);
+}
+
+class CanvasCustomizationInterface {
+    constructor(manager) {
+        this.manager = manager;
+        this.strokeProperties = manager.strokeProperties;
+        this.interfaceWindow = document.createElement("div");
+        this.interfaceWindow.classList.add("interface")
+    }
 }
