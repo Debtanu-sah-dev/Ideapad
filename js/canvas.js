@@ -1,5 +1,3 @@
-let compressionRatios = []
-
 class CanvasManager {
     constructor(parent) {
         this.parent = parent;
@@ -24,6 +22,7 @@ class CanvasManager {
         this.controlManager();
         this.penDown = false;
         this.fitCanvasElement();
+        this.canvasCustomizationInterface = new CanvasCustomizationInterface(this);
     }
 
     clearCanvas(){
@@ -38,43 +37,52 @@ class CanvasManager {
 
     controlManager() {
         this.canvasElement.addEventListener("mousedown", (e) => {
-            this.penDown = true;
-            let x = e.x;
-            let y = e.y;
-            this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties));
-            let stroke = this.strokes.at(-1)
-            stroke.add(new Point(x, y));
-            stroke.drawStroke();
+            if(e.button == 0){
+                this.penDown = true;
+                let x = e.x - this.parent.offsetLeft;
+                let y = e.y - this.parent.offsetTop;
+                this.strokes.push(new Stroke([], this.canvasCtx, structuredClone(this.strokeProperties)));
+                let stroke = this.strokes.at(-1)
+                stroke.add(new Point(x, y));
+                stroke.drawStroke();
+            }
+        })
+        this.parent.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            let x = e.x - this.parent.offsetLeft;
+            let y = e.y - this.parent.offsetTop;
+            this.canvasCustomizationInterface.active(x, y);
         })
         this.parent.addEventListener("mouseleave", (e) => {
-            if(this.penDown){
-                this.penDown = false;
-                if(this.strokes.length != 0){
-                    this.strokes.at(-1).compress(this.compressMethods);
+            if(e.button == 0){
+                if(this.penDown){
+                    this.penDown = false;
+                    if(this.strokes.length != 0){
+                        this.strokes.at(-1).compress(this.compressMethods);
+                    }
+                    this.clearCanvas();
+                    this.render();
                 }
-                this.clearCanvas();
-                this.render();
             }
         })
         this.canvasElement.addEventListener("mouseup", (e) => {
-            if (this.penDown) {
-                this.penDown = false;
-                if(this.strokes.length != 0){
-                    let originalCount = this.strokes.at(-1).points.length;
-                    // console.log(this.strokes.at(-1).points.length);
-                    this.strokes.at(-1).compress(this.compressMethods);
-                    // console.log(this.strokes.at(-1).points.length);
-                    compressionRatios.push(originalCount/(this.strokes.at(-1).points.length))
-                    console.log(compressionRatios.reduce((a,c) => a + c)/compressionRatios.length)
+            if(e.button == 0){
+                if (this.penDown) {
+                    this.penDown = false;
+                    if(this.strokes.length != 0){
+                        console.log(this.strokes.at(-1).points.length);
+                        this.strokes.at(-1).compress(this.compressMethods);
+                        console.log(this.strokes.at(-1).points.length);
+                    }
+                    this.clearCanvas();
+                    this.render();
                 }
-                this.clearCanvas();
-                this.render();
             }
         })
         this.canvasElement.addEventListener("mousemove", (e) => {
             if (this.penDown) {
-                let x = e.x;
-                let y = e.y;
+                let x = e.x - this.parent.offsetLeft;
+                let y = e.y - this.parent.offsetTop;
                 let stroke = this.strokes.at(-1)
                 stroke.add(new Point(x, y));
                 stroke.drawStroke();
@@ -209,9 +217,43 @@ function dist(x1, y1, x2, y2){
 
 class CanvasCustomizationInterface {
     constructor(manager) {
+        this.activeStatus = false;
         this.manager = manager;
         this.strokeProperties = manager.strokeProperties;
         this.interfaceWindow = document.createElement("div");
         this.interfaceWindow.classList.add("interface")
+        this.interfaceWindowBackdrop = document.createElement("div");
+        this.interfaceWindowBackdrop.classList.add("interfaceBackdrop");
+        this.colorPicker = document.createElement
+        manager.parent.appendChild(this.interfaceWindow);
+        manager.parent.appendChild(this.interfaceWindowBackdrop);
+        this.interfaceWindowBackdrop.addEventListener("click", () => {
+            this.inactive();
+        })
+    }
+    active(x = 10, y = 10){
+        if(!this.activeStatus){
+            this.activeStatus = true
+            this.interfaceWindow.style.display = "flex";
+            this.interfaceWindowBackdrop.style.display = "initial";
+            setTimeout(() => {
+                x = Math.min(x, this.manager.parent.offsetWidth - this.interfaceWindow.offsetWidth);
+                y = Math.min(y, this.manager.parent.offsetHeight - this.interfaceWindow.offsetHeight);
+                this.interfaceWindow.style.left = `${x}px`
+                this.interfaceWindow.style.top = `${y}px`
+                this.interfaceWindow.classList.add("active")
+            }, 0)
+        }
+    }
+
+    inactive(){
+        if(this.activeStatus){
+            this.activeStatus = false;
+            this.interfaceWindowBackdrop.style.display = "none";
+            this.interfaceWindow.classList.remove("active")
+            setTimeout(() => {
+                this.interfaceWindow.style.display = "none"
+            }, 200)
+        }
     }
 }

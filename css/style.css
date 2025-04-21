@@ -4,6 +4,15 @@
     box-sizing: border-box;
 }
 
+:root{
+    --box-shadow:
+        inset -1vh -1vh 2vh 0 #00000021,
+        inset -0.25vh -0.25vh 0.5vh 0 #00000032,
+        1vh 1vh 2vh 0 #00000042
+    ;
+    --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' id='noice'%3E%3Cfilter id='noise-filter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='1100' stitchTiles='stitch'%3E%3C/feTurbulence%3E%3CfeColorMatrix type='saturate' values='0'%3E%3C/feColorMatrix%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='1.81'%3E%3C/feFuncR%3E%3CfeFuncG type='linear' slope='1.81'%3E%3C/feFuncG%3E%3CfeFuncB type='linear' slope='1.81'%3E%3C/feFuncB%3E%3CfeFuncA type='linear' slope='0.64'%3E%3C/feFuncA%3E%3C/feComponentTransfer%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='3' intercept='-1.00'/%3E%3CfeFuncG type='linear' slope='3' intercept='-1.00'/%3E%3CfeFuncB type='linear' slope='3' intercept='-1.00'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise-filter)'%3E%3C/rect%3E%3C/svg%3E");
+}
+
 body{
     height: 100vh;
     overflow: hidden;
@@ -18,8 +27,37 @@ body{
     margin:0;
     padding: 0;
     overflow: hidden;
+    position: relative;
 }
 
 .interface{
-    
+    width: 100px; /*testing*/
+    height: 100px; /*testing*/
+    background-color: rgba(255, 255, 255, 0.5);
+    background-image: var(--noise);
+    backdrop-filter: blur(5px);
+    border-radius: 2vh;
+    box-shadow:var(--box-shadow);
+    position: absolute;
+    top: 10px; /*testing*/
+    left: 10px; /*testing*/
+    display: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 3;
+}
+
+.interface.active{
+    opacity: 1;
+}
+
+.interfaceBackdrop{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    opacity: 0;
+    display: none;
 }
