@@ -80,6 +80,7 @@ class CanvasManager {
             let x = e.x - this.parent.offsetLeft;
             let y = e.y - this.parent.offsetTop;
             this.canvasCustomizationInterface.active(x, y);
+            canTranslate = false;
         })
         this.parent.addEventListener("mouseleave", (e) => {
             if(e.button == 0){
@@ -92,6 +93,7 @@ class CanvasManager {
                     this.render();
                 }
             }
+            canTranslate = false;
         })
         this.canvasElement.addEventListener("mouseup", (e) => {
             if(e.button == 0){
@@ -109,7 +111,6 @@ class CanvasManager {
             if(e.button == 1){
                 e.preventDefault();
                 canTranslate = false;
-                prevTranslation = this.translation.copy();
             }
         })
         this.canvasElement.addEventListener("mousemove", (e) => {
