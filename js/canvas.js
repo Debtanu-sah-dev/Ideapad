@@ -11,18 +11,21 @@ class CanvasManager {
         window.onresize = (e) => {
             this.fitCanvasElement();
         };
+        this.translation = new Point(0, 0);
         this.strokeProperties = {
             color: "#000000",
             thickness: 5,
             join: "round",
-            cap: "round"
+            cap: "round",
+            translation: this.translation
         }
         this.shapeProperties = {
             strokeColor:"#000000",
             fillColor:false,
             thickness: 5,
             join: "round",
-            cap: "round"
+            cap: "round",
+            translation: this.translation
         }
         this.strokes = [];
         this.compressMethods = ["prune"];
@@ -38,6 +41,7 @@ class CanvasManager {
     }
 
     render() {
+        this.clearCanvas();
         for (let stroke of this.strokes) {
             if(stroke instanceof Stroke){
                 stroke.drawStroke();
@@ -49,15 +53,26 @@ class CanvasManager {
     }
 
     controlManager() {
+        let translationBegin;
+        let prevTranslation = this.translation.copy();
+        let move = new Point(0, 0);
+        let canTranslate = false;
         this.canvasElement.addEventListener("mousedown", (e) => {
+            let x = e.x - this.parent.offsetLeft;
+            let y = e.y - this.parent.offsetTop;
             if(e.button == 0){
                 this.penDown = true;
-                let x = e.x - this.parent.offsetLeft;
-                let y = e.y - this.parent.offsetTop;
-                this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties));
+                this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
                 let stroke = this.strokes.at(-1)
-                stroke.add(new Point(x, y));
+                stroke.add(new Point(x - this.translation.x, y - this.translation.y));
                 stroke.drawStroke();
+            }
+            if (e.button == 1) {
+                e.preventDefault();
+                translationBegin = new Point(x, y);
+                // console.log(x, y);
+                canTranslate = true;
+                prevTranslation = this.translation.copy();
             }
         })
         this.parent.addEventListener("contextmenu", (e) => {
@@ -91,14 +106,28 @@ class CanvasManager {
                     this.render();
                 }
             }
+            if(e.button == 1){
+                e.preventDefault();
+                canTranslate = false;
+                prevTranslation = this.translation.copy();
+            }
         })
         this.canvasElement.addEventListener("mousemove", (e) => {
+            let x = e.x - this.parent.offsetLeft;
+            let y = e.y - this.parent.offsetTop;
             if (this.penDown) {
-                let x = e.x - this.parent.offsetLeft;
-                let y = e.y - this.parent.offsetTop;
                 let stroke = this.strokes.at(-1)
-                stroke.add(new Point(x, y));
+                stroke.add(new Point(x - this.translation.x, y - this.translation.y));
                 stroke.drawStroke();
+            }
+            e.preventDefault();
+            if (canTranslate) {
+                move.x = x - translationBegin.x;
+                move.y = y - translationBegin.y;
+                this.translation.x = prevTranslation.x + move.x
+                this.translation.y = prevTranslation.y + move.y
+                this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+                this.render();
             }
         })
     }
@@ -111,11 +140,12 @@ class CanvasManager {
 }
 
 class Stroke {
-    constructor(points = [], canvasCtx, strokeProperties, shapeDriver = false) {
-        this.points = [...points];
+    constructor(points = [], canvasCtx, strokeProperties, shapeDriver = false, manager) {
+        this.points = points != null ? [...points] : [];
         this.canvasCtx = canvasCtx;
         this.strokeProperties = structuredClone(strokeProperties);
         this.shapeDriver = shapeDriver;
+        this.manager = manager
     }
 
     add(point) {
@@ -123,13 +153,16 @@ class Stroke {
     }
 
     drawStroke(canvasCtx = this.canvasCtx) {
+        if (this.points.length == 0) {
+            return;
+        }
         canvasCtx.beginPath();
-        canvasCtx.moveTo(...this.points[0].coord);
+        canvasCtx.moveTo(...this.points[0].add(this.manager.strokeProperties.translation).coord);
         for (let point of this.points) {
-            canvasCtx.lineTo(...point.coord);
+            canvasCtx.lineTo(...point.add(this.manager.strokeProperties.translation).coord);
         }
         if (!this.shapeDriver) {
-            canvasCtx.moveTo(...this.points.at(-1).coord);
+            canvasCtx.moveTo(...this.points.at(-1).add(this.manager.strokeProperties.translation).coord);
         }
         if (this.shapeDriver) {
             if(!this.strokeProperties.strokeColor){
@@ -186,13 +219,13 @@ class Shape{
     drawShape(canvasCtx = this.canvasCtx){
         switch (this.shape) {
             case "line":
-                new Stroke(this.geometryInfo, canvasCtx, this.manager.strokeProperties, false).drawStroke();
+                new Stroke(this.geometryInfo, canvasCtx, structuredClone(this.manager.strokeProperties), false, this.manager).drawStroke();
                 return;
             case "triangle":
-                new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, true).drawStroke();
+                new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, true, this.manager).drawStroke();
                 return;
             case "freeShape":
-                new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, true).drawStroke();
+                new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, true, this.manager).drawStroke();
                 return;
             default:
                 break;
@@ -236,19 +269,20 @@ class Shape{
 
     circle(canvasCtx = this.canvasCtx){
         canvasCtx.beginPath();
-        const x = this.geometryInfo.x; // x coordinate
-        const y = this.geometryInfo.y; // y coordinate
+        const x = this.geometryInfo.x + this.manager.translation.x; // x coordinate
+        const y = this.geometryInfo.y + this.manager.translation.y; // y coordinate
         const radiusX = this.geometryInfo.rx; // Arc radius
         const radiusY = this.geometryInfo.ry; // Arc radius
+        const rotation = this.geometryInfo.rotation;
         const startAngle = 0; // Starting point on circle
         const endAngle = Math.PI * 2; // End point on circle;
-        canvasCtx.ellipse(x, y, radiusX, radiusY, 0, startAngle, endAngle)
+        canvasCtx.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
     }
 
     square(canvasCtx = this.canvasCtx){
         canvasCtx.beginPath();
-        const x = this.geometryInfo.x; // x coordinate
-        const y = this.geometryInfo.y; // y coordinate
+        const x = this.geometryInfo.x + this.manager.translation.x; // x coordinate
+        const y = this.geometryInfo.y + this.manager.translation.y; // y coordinate
         const side = this.geometryInfo.side; // Side
         const signY = this.geometryInfo.signY; // Side
         canvasCtx.rect(x, y, side, signY*Math.abs(side));
@@ -256,8 +290,8 @@ class Shape{
 
     rectangle(canvasCtx = this.canvasCtx){
         canvasCtx.beginPath();
-        const x = this.geometryInfo.x; // x coordinate
-        const y = this.geometryInfo.y; // y coordinate
+        const x = this.geometryInfo.x + this.manager.translation.x; // x coordinate
+        const y = this.geometryInfo.y + this.manager.translation.y; // y coordinate
         const height = this.geometryInfo.height; // height
         const width = this.geometryInfo.width; // width
         canvasCtx.rect(x, y, width, height);
@@ -286,16 +320,16 @@ class ShapeEditor{
             this.editCanvas.addEventListener("mousedown", (e) => {
                 if(e.button == 0){
                     this.editMode = true;
-                    this.beginPoint.x = e.x;
-                    this.beginPoint.y = e.y;
-                    this.endPoint.x = e.x;
-                    this.endPoint.y = e.y;
+                    this.beginPoint.x = e.x - this.manager.parent.offsetLeft;
+                    this.beginPoint.y = e.y - this.manager.parent.offsetTop;
+                    this.endPoint.x = e.x - this.manager.parent.offsetLeft;
+                    this.endPoint.y = e.y - this.manager.parent.offsetTop;
                 }
             })
             this.editCanvas.addEventListener("mousemove", (e) => {
                 if((e.button == 0) && this.editMode){
-                    this.endPoint.x = e.x;
-                    this.endPoint.y = e.y;
+                    this.endPoint.x = e.x - this.manager.parent.offsetLeft;
+                    this.endPoint.y = e.y - this.manager.parent.offsetTop;
                     this.shape.geometryInfo = new geometryInfoGenerator(this.shape.shape, this.beginPoint, this.endPoint).generate();
                     this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height)
                     this.shape.drawShape(this.editCanvasCtx)
@@ -319,28 +353,25 @@ class ShapeEditor{
                     this.manager.shapeMode = false;
                 }
             })
-            this.editCanvas.addEventListener("contextmenu", (e) => {
-                e.preventDefault();
-            })
         }
         else{
             this.points = [];
             this.editCanvas.addEventListener("click", (e) => {
                 this.editMode = true;
-                this.points.push(new Point(e.x, e.y));
+                this.points.push(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
                 this.shape.geometryInfo = new geometryInfoGenerator(this.shape.shape, this.points).generate();
                 this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height)
                 this.shape.drawShape(this.editCanvasCtx)
             })
-            this.editCanvas.addEventListener("contextmenu", (e) => {
-                e.preventDefault();
-                this.editMode = false;
-                this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
-                this.manager.parent.removeChild(this.editCanvas);
-                this.manager.render();
-                this.manager.shapeMode = false;
-            })
         }
+        this.editCanvas.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            this.editMode = false;
+            this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+            this.manager.parent.removeChild(this.editCanvas);
+            this.manager.render();
+            this.manager.shapeMode = false;
+        })
     }
 }
 
@@ -370,14 +401,18 @@ class geometryInfoGenerator{
                 geometryInfo.push(new Point(this.endPoint.x, this.beginPoint.y));
                 break;
             case "freeShape":
-                geometryInfo = structuredClone(this.points)
+                geometryInfo = this.points;
                 break;
             case "circle":
+                let rx = Math.abs(this.beginPoint.x - this.endPoint.x);
+                let ry = Math.abs(this.beginPoint.y - this.endPoint.y);
                 geometryInfo = {
                     x:this.beginPoint.x,
                     y:this.beginPoint.y,
-                    rx: Math.abs(this.beginPoint.x - this.endPoint.x),
-                    ry: Math.abs(this.beginPoint.y - this.endPoint.y)
+                    rx: rx,
+                    ry: ry,
+                    distance: dist(0, 0, rx, ry),
+                    rotation:0
                 }
                 break;
             case "square":
@@ -414,6 +449,10 @@ class Point {
 
     copy(){
         return new Point(this.x, this.y);
+    }
+
+    add(point){
+        return new Point(point.x + this.x, point.y + this.y);
     }
 }
 
@@ -577,39 +616,39 @@ class CanvasCustomizationInterface {
             }
         })
         this.triangleShape.addEventListener("click", () => {
-            if (this.manager.shapeMode) {
-                return;
-            }
+            // if (this.manager.shapeMode) {
+            //     return;
+            // }
             this.manager.strokes.push(new Shape("triangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
         })
         this.freeShape.addEventListener("click", () => {
-            if (this.manager.shapeMode) {
-                return;
-            }
+            // if (this.manager.shapeMode) {
+            //     return;
+            // }
             this.manager.strokes.push(new Shape("freeShape", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
         })
         this.circleShape.addEventListener("click", () => {
-            if (this.manager.shapeMode) {
-                return;
-            }
+            // if (this.manager.shapeMode) {
+            //     return;
+            // }
             this.manager.strokes.push(new Shape("circle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
         })
         this.lineShape.addEventListener("click", () => {
-            if (this.manager.shapeMode) {
-                return;
-            }
+            // if (this.manager.shapeMode) {
+            //     return;
+            // }
             this.manager.strokes.push(new Shape("line", this.manager.canvasCtx, this.strokeProperties, null, this.manager));
         })
         this.squareShape.addEventListener("click", () => {
-            if (this.manager.shapeMode) {
-                return;
-            }
+            // if (this.manager.shapeMode) {
+            //     return;
+            // }
             this.manager.strokes.push(new Shape("square", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
         })
         this.rectangleShape.addEventListener("click", () => {
-            if (this.manager.shapeMode) {
-                return;
-            }
+            // if (this.manager.shapeMode) {
+            //     return;
+            // }
             this.manager.strokes.push(new Shape("rectangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
         })
         this.fillTypeSelector.addEventListener("click", () => {
