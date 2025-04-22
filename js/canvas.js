@@ -12,7 +12,14 @@ class CanvasManager {
             this.fitCanvasElement();
         };
         this.strokeProperties = {
-            color: "red",
+            color: "#000000",
+            thickness: 5,
+            join: "round",
+            cap: "round"
+        }
+        this.shapeProperties = {
+            strokeColor:"#000000",
+            fillColor:false,
             thickness: 5,
             join: "round",
             cap: "round"
@@ -21,6 +28,7 @@ class CanvasManager {
         this.compressMethods = ["prune"];
         this.controlManager();
         this.penDown = false;
+        this.shapeMode = false;
         this.fitCanvasElement();
         this.canvasCustomizationInterface = new CanvasCustomizationInterface(this);
     }
@@ -31,7 +39,12 @@ class CanvasManager {
 
     render() {
         for (let stroke of this.strokes) {
-            stroke.drawStroke();
+            if(stroke instanceof Stroke){
+                stroke.drawStroke();
+            }
+            if(stroke instanceof Shape){
+                stroke.drawShape();
+            }
         }
     }
 
@@ -41,7 +54,7 @@ class CanvasManager {
                 this.penDown = true;
                 let x = e.x - this.parent.offsetLeft;
                 let y = e.y - this.parent.offsetTop;
-                this.strokes.push(new Stroke([], this.canvasCtx, structuredClone(this.strokeProperties)));
+                this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties));
                 let stroke = this.strokes.at(-1)
                 stroke.add(new Point(x, y));
                 stroke.drawStroke();
@@ -98,10 +111,11 @@ class CanvasManager {
 }
 
 class Stroke {
-    constructor(points = [], canvasCtx, strokeProperties) {
+    constructor(points = [], canvasCtx, strokeProperties, shapeDriver = false) {
         this.points = [...points];
         this.canvasCtx = canvasCtx;
-        this.strokeProperties = strokeProperties;
+        this.strokeProperties = structuredClone(strokeProperties);
+        this.shapeDriver = shapeDriver;
     }
 
     add(point) {
@@ -110,16 +124,37 @@ class Stroke {
 
     drawStroke(canvasCtx = this.canvasCtx) {
         canvasCtx.beginPath();
+        canvasCtx.moveTo(...this.points[0].coord);
         for (let point of this.points) {
             canvasCtx.lineTo(...point.coord);
-            canvasCtx.moveTo(...point.coord);
         }
-        canvasCtx.moveTo(...this.points.at(-1).coord);
-        canvasCtx.strokeStyle = this.strokeProperties.color;
+        if (!this.shapeDriver) {
+            canvasCtx.moveTo(...this.points.at(-1).coord);
+        }
+        if (this.shapeDriver) {
+            if(!this.strokeProperties.strokeColor){
+                canvasCtx.strokeStyle = "#00000000";
+            }
+            else{
+                canvasCtx.strokeStyle = this.strokeProperties.strokeColor;
+            }
+            if(!this.strokeProperties.fillColor){
+                canvasCtx.fillStyle = "#00000000";
+            }
+            else{
+                canvasCtx.fillStyle = this.strokeProperties.fillColor;
+            }
+        }
+        else{
+            canvasCtx.strokeStyle = this.strokeProperties.color;
+        }
         canvasCtx.lineWidth = this.strokeProperties.thickness;
         canvasCtx.lineJoin = this.strokeProperties.join;
         canvasCtx.lineCap = this.strokeProperties.cap;
         canvasCtx.closePath();
+        if (this.shapeDriver) {
+            canvasCtx.fill();
+        }
         canvasCtx.stroke();
     }
     compress(methods = ["prune"]){
@@ -131,11 +166,254 @@ class Stroke {
     }
 }
 
+// new Shape("triangle", Canvas.canvasCtx, Canvas.shapeProperties, [new Point(100, 100), new Point(200, 200), new Point(100, 200), new Point(100, 100)], Canvas).drawShape();
+// new Shape("freeShape", Canvas.canvasCtx, Canvas.shapeProperties, [new Point(400, 410), new Point(600, 400), new Point(550, 700), new Point(400, 410)], Canvas).drawShape();
+// new Shape("circle", Canvas.canvasCtx, Canvas.shapeProperties, {x:700, y:200, rx: 50, ry:50}, Canvas).drawShape();
+// new Shape("square", Canvas.canvasCtx, Canvas.shapeProperties, {x:200, y:500, side:100}, Canvas).drawShape();
+// new Shape("rectangle", Canvas.canvasCtx, Canvas.shapeProperties, {x:350, y:200, height:100, width:200}, Canvas).drawShape();
+
+class Shape{
+    constructor(shape, canvasCtx, shapeProperties, geometryInfo = [], manager){
+        this.shape = shape;
+        this.canvasCtx = canvasCtx;
+        this.shapeProperties = structuredClone(shapeProperties);
+        this.geometryInfo = geometryInfo;
+        this.manager = manager;
+        this.shapeEditor = new ShapeEditor(this, manager)
+        this.manager.shapeMode = true;
+    }
+
+    drawShape(canvasCtx = this.canvasCtx){
+        switch (this.shape) {
+            case "line":
+                new Stroke(this.geometryInfo, canvasCtx, this.manager.strokeProperties, false).drawStroke();
+                return;
+            case "triangle":
+                new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, true).drawStroke();
+                return;
+            case "freeShape":
+                new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, true).drawStroke();
+                return;
+            default:
+                break;
+        }
+        if(!this.shapeProperties.strokeColor){
+            canvasCtx.strokeStyle = "#00000000";
+        }
+        else{
+            canvasCtx.strokeStyle = this.shapeProperties.strokeColor;
+        }
+        if(!this.shapeProperties.fillColor){
+            canvasCtx.fillStyle = "#00000000";
+        }
+        else{
+            canvasCtx.fillStyle = this.shapeProperties.fillColor;
+        }
+        if(this.shapeProperties.fillColor != false){
+            canvasCtx.lineWidth = this.shapeProperties.thickness*2;
+        }
+        else{
+            canvasCtx.lineWidth = this.shapeProperties.thickness;
+        }
+        canvasCtx.lineJoin = this.shapeProperties.join;
+        canvasCtx.lineCap = this.shapeProperties.cap;
+        switch (this.shape) {
+            case "circle":
+                this.circle(canvasCtx);
+                break;
+            case "square":
+                this.square(canvasCtx)
+                break;
+            case "rectangle":
+                this.rectangle(canvasCtx)
+                break;
+            default:
+                break;
+        }
+        canvasCtx.stroke();
+        canvasCtx.fill();
+    }
+
+    circle(canvasCtx = this.canvasCtx){
+        canvasCtx.beginPath();
+        const x = this.geometryInfo.x; // x coordinate
+        const y = this.geometryInfo.y; // y coordinate
+        const radiusX = this.geometryInfo.rx; // Arc radius
+        const radiusY = this.geometryInfo.ry; // Arc radius
+        const startAngle = 0; // Starting point on circle
+        const endAngle = Math.PI * 2; // End point on circle;
+        canvasCtx.ellipse(x, y, radiusX, radiusY, 0, startAngle, endAngle)
+    }
+
+    square(canvasCtx = this.canvasCtx){
+        canvasCtx.beginPath();
+        const x = this.geometryInfo.x; // x coordinate
+        const y = this.geometryInfo.y; // y coordinate
+        const side = this.geometryInfo.side; // Side
+        const signY = this.geometryInfo.signY; // Side
+        canvasCtx.rect(x, y, side, signY*Math.abs(side));
+    }
+
+    rectangle(canvasCtx = this.canvasCtx){
+        canvasCtx.beginPath();
+        const x = this.geometryInfo.x; // x coordinate
+        const y = this.geometryInfo.y; // y coordinate
+        const height = this.geometryInfo.height; // height
+        const width = this.geometryInfo.width; // width
+        canvasCtx.rect(x, y, width, height);
+    }
+}
+
+class ShapeEditor{
+    constructor(shape, manager){
+        this.shape = shape;
+        this.manager = manager;
+        this.manager.canvasCustomizationInterface.inactive();
+        this.editCanvas = document.createElement("canvas");
+        this.editCanvasCtx = this.editCanvas.getContext("2d");
+        this.editCanvas.classList.add("editCanvas")
+        this.resizeEvent = () => {
+            this.editCanvas.width = this.manager.canvasElement.width;
+            this.editCanvas.height = this.manager.canvasElement.height;
+        }
+        this.resizeEvent();
+        this.manager.canvasElement.addEventListener("resize", this.resizeEvent)
+        this.manager.parent.appendChild(this.editCanvas)
+        this.editMode = false;
+        if(this.shape.shape != "freeShape"){
+            this.beginPoint = new Point(0, 0);
+            this.endPoint = new Point(0, 0);
+            this.editCanvas.addEventListener("mousedown", (e) => {
+                if(e.button == 0){
+                    this.editMode = true;
+                    this.beginPoint.x = e.x;
+                    this.beginPoint.y = e.y;
+                    this.endPoint.x = e.x;
+                    this.endPoint.y = e.y;
+                }
+            })
+            this.editCanvas.addEventListener("mousemove", (e) => {
+                if((e.button == 0) && this.editMode){
+                    this.endPoint.x = e.x;
+                    this.endPoint.y = e.y;
+                    this.shape.geometryInfo = new geometryInfoGenerator(this.shape.shape, this.beginPoint, this.endPoint).generate();
+                    this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height)
+                    this.shape.drawShape(this.editCanvasCtx)
+                }
+            })
+            this.editCanvas.addEventListener("mouseup", (e) => {
+                if((e.button == 0) && this.editMode){
+                    this.editMode = false;
+                    this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+                    this.manager.parent.removeChild(this.editCanvas);
+                    this.manager.render();
+                    this.manager.shapeMode = false;
+                }
+            })
+            this.editCanvas.addEventListener("leave", (e) => {
+                if((e.button == 0) && this.editMode){
+                    this.editMode = false;
+                    this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+                    this.manager.parent.removeChild(this.editCanvas);
+                    this.manager.render();
+                    this.manager.shapeMode = false;
+                }
+            })
+            this.editCanvas.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+            })
+        }
+        else{
+            this.points = [];
+            this.editCanvas.addEventListener("click", (e) => {
+                this.editMode = true;
+                this.points.push(new Point(e.x, e.y));
+                this.shape.geometryInfo = new geometryInfoGenerator(this.shape.shape, this.points).generate();
+                this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height)
+                this.shape.drawShape(this.editCanvasCtx)
+            })
+            this.editCanvas.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                this.editMode = false;
+                this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+                this.manager.parent.removeChild(this.editCanvas);
+                this.manager.render();
+                this.manager.shapeMode = false;
+            })
+        }
+    }
+}
+
+class geometryInfoGenerator{
+    constructor(shape, beginPoint, endPoint){
+        this.shape = shape;
+        if(this.shape != "freeShape"){
+            this.beginPoint = beginPoint;
+            this.endPoint = endPoint;
+        }
+        else{
+            this.points = beginPoint;
+        }
+    }
+    generate(){
+        let geometryInfo;
+        switch (this.shape) {
+            case "line":
+                geometryInfo = [];
+                geometryInfo.push(this.beginPoint.copy());
+                geometryInfo.push(this.endPoint.copy());
+                break;
+            case "triangle":
+                geometryInfo = [];
+                geometryInfo.push(new Point((this.beginPoint.x + this.endPoint.x)/2, this.endPoint.y));
+                geometryInfo.push(new Point(this.beginPoint.x, this.beginPoint.y));
+                geometryInfo.push(new Point(this.endPoint.x, this.beginPoint.y));
+                break;
+            case "freeShape":
+                geometryInfo = structuredClone(this.points)
+                break;
+            case "circle":
+                geometryInfo = {
+                    x:this.beginPoint.x,
+                    y:this.beginPoint.y,
+                    rx: Math.abs(this.beginPoint.x - this.endPoint.x),
+                    ry: Math.abs(this.beginPoint.y - this.endPoint.y)
+                }
+                break;
+            case "square":
+                let x = 
+                geometryInfo = {
+                    x: this.beginPoint.x,
+                    y: this.beginPoint.y,
+                    side: this.endPoint.x - this.beginPoint.x,
+                    signY: Math.sign(this.endPoint.y - this.beginPoint.y)
+                }
+                break;
+            case "rectangle":
+                geometryInfo = {
+                    x: Math.min(this.beginPoint.x, this.endPoint.x),
+                    y: Math.min(this.beginPoint.y, this.endPoint.y),
+                    width: Math.abs(this.beginPoint.x - this.endPoint.x),
+                    height: Math.abs(this.beginPoint.y - this.endPoint.y)
+                }
+                break;
+            default:
+                break;
+        }
+
+        return geometryInfo;
+    }
+}
+
 class Point {
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
         this.coord = [x, y];
+    }
+
+    copy(){
+        return new Point(this.x, this.y);
     }
 }
 
@@ -185,7 +463,6 @@ class StrokeCompressor {
             for (let j = -1 * kernelSize; j <= kernelSize; j++) {
                 pathSegment.push(path[i + j].coord);
             }
-            console.log(pathSegment)
             let averagePoint = pathSegment.reduce((a, c) => {
                 return [a[0] + c[0], a[1] + c[1]];
             }, [0, 0]).map(e => e / (kernelSize + 2))
@@ -220,15 +497,141 @@ class CanvasCustomizationInterface {
         this.activeStatus = false;
         this.manager = manager;
         this.strokeProperties = manager.strokeProperties;
+        this.shapeProperties = manager.shapeProperties;
         this.interfaceWindow = document.createElement("div");
         this.interfaceWindow.classList.add("interface")
         this.interfaceWindowBackdrop = document.createElement("div");
         this.interfaceWindowBackdrop.classList.add("interfaceBackdrop");
-        this.colorPicker = document.createElement
+        this.colorPicker1 = document.createElement("input");
+        this.colorPicker1.type = "color";
+        this.colorPicker2 = document.createElement("input");
+        this.colorPicker2.type = "color";
+        this.colorPicker2.value = "#ffffff"
+        this.interfaceWindow.appendChild(this.colorPicker1);
+        this.interfaceWindow.appendChild(this.colorPicker2);
+        // Triangle
+        this.triangleShape = document.createElement("button");
+        this.triangleShape.innerText = "Triangle";
+        this.interfaceWindow.appendChild(this.triangleShape);
+
+        //Free Shape
+        this.freeShape = document.createElement("button");
+        this.freeShape.innerText = "Free Shape";
+        this.interfaceWindow.appendChild(this.freeShape);
+
+        //Circle Shape
+        this.circleShape = document.createElement("button");
+        this.circleShape.innerText = "Circle";
+        this.interfaceWindow.appendChild(this.circleShape);
+
+        // Line Shape
+        this.lineShape = document.createElement("button");
+        this.lineShape.innerText = "Line";
+        this.interfaceWindow.appendChild(this.lineShape);
+
+        // Square
+        this.squareShape = document.createElement("button");
+        this.squareShape.innerText = "Square";
+        this.interfaceWindow.appendChild(this.squareShape);
+
+        // Rectangle
+        this.rectangleShape = document.createElement("button");
+        this.rectangleShape.innerText = "Rectangle";
+        this.interfaceWindow.appendChild(this.rectangleShape);
+
+        //Fill Type Selector
+        this.fillTypeSelector = document.createElement("button");
+        this.fillTypeSelector.innerText = "Stroke & Fill";
+        this.interfaceWindow.appendChild(this.fillTypeSelector);
+
+        this.fillTypeArray = ["Stroke & Fill", "Stroke", "Fill"];
+        this.fillType = 0;
+
+        this.thicknessSlider = document.createElement("input");
+        this.thicknessSlider.type = "range";
+        this.thicknessSlider.value = 5;
+        this.thicknessSlider.step = 1;
+        this.thicknessSlider.min = 1;
+        this.thicknessSlider.max = 25;
+        this.interfaceWindow.appendChild(this.thicknessSlider)
         manager.parent.appendChild(this.interfaceWindow);
         manager.parent.appendChild(this.interfaceWindowBackdrop);
         this.interfaceWindowBackdrop.addEventListener("click", () => {
             this.inactive();
+        })
+        this.colorPicker1.addEventListener("input", () => {
+            if(this.shapeProperties.strokeColor != false){
+                this.shapeProperties.strokeColor = this.colorPicker1.value;
+            }
+            this.strokeProperties.color = this.colorPicker1.value;
+        })
+        
+        this.thicknessSlider.addEventListener("input", () => {
+            this.shapeProperties.thickness = this.thicknessSlider.value;
+            this.strokeProperties.thickness = this.thicknessSlider.value;
+        })
+        
+        this.colorPicker2.addEventListener("input", () => {
+            if(this.shapeProperties.fillColor != false){
+                this.shapeProperties.fillColor = this.colorPicker2.value;
+            }
+        })
+        this.triangleShape.addEventListener("click", () => {
+            if (this.manager.shapeMode) {
+                return;
+            }
+            this.manager.strokes.push(new Shape("triangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+        })
+        this.freeShape.addEventListener("click", () => {
+            if (this.manager.shapeMode) {
+                return;
+            }
+            this.manager.strokes.push(new Shape("freeShape", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+        })
+        this.circleShape.addEventListener("click", () => {
+            if (this.manager.shapeMode) {
+                return;
+            }
+            this.manager.strokes.push(new Shape("circle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+        })
+        this.lineShape.addEventListener("click", () => {
+            if (this.manager.shapeMode) {
+                return;
+            }
+            this.manager.strokes.push(new Shape("line", this.manager.canvasCtx, this.strokeProperties, null, this.manager));
+        })
+        this.squareShape.addEventListener("click", () => {
+            if (this.manager.shapeMode) {
+                return;
+            }
+            this.manager.strokes.push(new Shape("square", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+        })
+        this.rectangleShape.addEventListener("click", () => {
+            if (this.manager.shapeMode) {
+                return;
+            }
+            this.manager.strokes.push(new Shape("rectangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+        })
+        this.fillTypeSelector.addEventListener("click", () => {
+            this.fillType = (this.fillType + 1) % 3;
+            this.fillTypeSelector.innerText = this.fillTypeArray[this.fillType];
+            switch (this.fillType) {
+                case 0:
+                    this.shapeProperties.strokeColor = this.colorPicker1.value;
+                    this.shapeProperties.fillColor = this.colorPicker2.value;
+                    break;
+                case 1:
+                    this.shapeProperties.strokeColor = this.colorPicker1.value;
+                    this.shapeProperties.fillColor = false;
+                    break;
+                case 2:
+                    this.shapeProperties.strokeColor = false;
+                    this.shapeProperties.fillColor = this.colorPicker2.value;
+                    break;
+            
+                default:
+                    break;
+            }
         })
     }
     active(x = 10, y = 10){
