@@ -1,3 +1,18 @@
+function listenableArray(...args) {
+    let a = [...args];
+    a.addCallback = () => {
+
+    }
+    a.push = function () {
+        a.addCallback();
+        return Array.prototype.push.apply(this, arguments)
+    }
+    a.pushNC = function () {
+        return Array.prototype.push.apply(this, arguments)
+    }
+    return a;
+}
+
 class CanvasManager {
     constructor(parent) {
         this.parent = parent;
@@ -27,12 +42,25 @@ class CanvasManager {
             cap: "round",
             translation: this.translation
         }
-        this.strokes = [];
+        this.currentMouseCoord = new Point();
+        this.coordCounter = document.createElement("span");
+        this.parent.appendChild(this.coordCounter);
+        this.coordCounter.classList.add("coordCounter")
+        this.strokes = listenableArray();
+        this.redoQueue = []
+        this.strokes.addCallback = () => {
+            this.redoQueue = [];
+        }
         this.compressMethods = ["prune"];
+        this.translationBegin = new Point(0, 0);
+        this.prevTranslation = this.translation.copy();
+        this.move = new Point(0, 0);
+        this.canTranslate = false;
         this.controlManager();
         this.penDown = false;
         this.shapeMode = false;
         this.fitCanvasElement();
+        this.constraintWindow = new ConstraintDriver(this);
         this.canvasCustomizationInterface = new CanvasCustomizationInterface(this);
     }
 
@@ -52,84 +80,104 @@ class CanvasManager {
         }
     }
 
-    controlManager() {
-        let translationBegin;
-        let prevTranslation = this.translation.copy();
-        let move = new Point(0, 0);
-        let canTranslate = false;
-        this.canvasElement.addEventListener("mousedown", (e) => {
-            let x = e.x - this.parent.offsetLeft;
-            let y = e.y - this.parent.offsetTop;
-            if(e.button == 0){
-                this.penDown = true;
-                this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
-                let stroke = this.strokes.at(-1)
-                stroke.add(new Point(x - this.translation.x, y - this.translation.y));
-                stroke.drawStroke();
-            }
-            if (e.button == 1) {
-                e.preventDefault();
-                translationBegin = new Point(x, y);
-                // console.log(x, y);
-                canTranslate = true;
-                prevTranslation = this.translation.copy();
-            }
-        })
-        this.parent.addEventListener("contextmenu", (e) => {
+    mouseDown(e, point){
+        let x = (point ? point.x : e.x) - this.parent.offsetLeft;
+        let y = (point ? point.y : e.y) - this.parent.offsetTop;
+        if(e.button == 0){
+            this.penDown = true;
+            this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
+            let stroke = this.strokes.at(-1)
+            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
+            stroke.drawStroke();
+        }
+        if (e.button == 1) {
             e.preventDefault();
-            let x = e.x - this.parent.offsetLeft;
-            let y = e.y - this.parent.offsetTop;
-            this.canvasCustomizationInterface.active(x, y);
-            canTranslate = false;
-        })
-        this.parent.addEventListener("mouseleave", (e) => {
-            if(e.button == 0){
-                if(this.penDown){
-                    this.penDown = false;
-                    if(this.strokes.length != 0){
-                        this.strokes.at(-1).compress(this.compressMethods);
-                    }
-                    this.clearCanvas();
-                    this.render();
+            this.translationBegin = new Point(x, y);
+            // console.log(x, y);
+            this.canTranslate = true;
+            this.prevTranslation = this.translation.copy();
+        }
+    }
+
+    contextMenu(e){
+        e.preventDefault();
+        let x = e.x - this.parent.offsetLeft;
+        let y = e.y - this.parent.offsetTop;
+        this.canvasCustomizationInterface.active(x, y);
+        this.canTranslate = false;
+    }
+
+    mouseLeave(e){
+        if(e.button == 0){
+            if(this.penDown){
+                this.penDown = false;
+                if(this.strokes.length != 0){
+                    this.strokes.at(-1).compress(this.compressMethods);
                 }
-            }
-            canTranslate = false;
-        })
-        this.canvasElement.addEventListener("mouseup", (e) => {
-            if(e.button == 0){
-                if (this.penDown) {
-                    this.penDown = false;
-                    if(this.strokes.length != 0){
-                        console.log(this.strokes.at(-1).points.length);
-                        this.strokes.at(-1).compress(this.compressMethods);
-                        console.log(this.strokes.at(-1).points.length);
-                    }
-                    this.clearCanvas();
-                    this.render();
-                }
-            }
-            if(e.button == 1){
-                e.preventDefault();
-                canTranslate = false;
-            }
-        })
-        this.canvasElement.addEventListener("mousemove", (e) => {
-            let x = e.x - this.parent.offsetLeft;
-            let y = e.y - this.parent.offsetTop;
-            if (this.penDown) {
-                let stroke = this.strokes.at(-1)
-                stroke.add(new Point(x - this.translation.x, y - this.translation.y));
-                stroke.drawStroke();
-            }
-            e.preventDefault();
-            if (canTranslate) {
-                move.x = x - translationBegin.x;
-                move.y = y - translationBegin.y;
-                this.translation.x = prevTranslation.x + move.x
-                this.translation.y = prevTranslation.y + move.y
-                this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+                this.clearCanvas();
                 this.render();
             }
+        }
+        this.canTranslate = false;
+    }
+
+    mouseUp(e){
+        if(e.button == 0){
+            if (this.penDown) {
+                this.penDown = false;
+                if(this.strokes.length != 0){
+                    console.log(this.strokes.at(-1).points.length);
+                    this.strokes.at(-1).compress(this.compressMethods);
+                    console.log(this.strokes.at(-1).points.length);
+                }
+                this.clearCanvas();
+                this.render();
+            }
+        }
+        if(e.button == 1){
+            e.preventDefault();
+            this.canTranslate = false;
+        }
+    }
+
+    mouseMove(e, point){
+        let x = (point ? point.x : e.x) - this.parent.offsetLeft;
+        let y = (point ? point.y : e.y) - this.parent.offsetTop;
+        if (this.penDown) {
+            let stroke = this.strokes.at(-1)
+            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
+            stroke.drawStroke();
+        }
+        e.preventDefault();
+        if (this.canTranslate) {
+            this.move.x = x - this.translationBegin.x;
+            this.move.y = y - this.translationBegin.y;
+            this.translation.x = this.prevTranslation.x + this.move.x
+            this.translation.y = this.prevTranslation.y + this.move.y
+            this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+            this.render();
+        }
+        this.currentMouseCoord.x = e.x - this.parent.offsetLeft - this.translation.x;
+        this.currentMouseCoord.y = e.y - this.parent.offsetTop - this.translation.y;
+
+        this.coordCounter.innerText = `${this.currentMouseCoord.x}, ${ this.currentMouseCoord.y}`
+    }
+
+    controlManager() {
+        this.canvasElement.addEventListener("mousedown", (e) => {
+            this.mouseDown(e);
+        })
+        this.parent.addEventListener("contextmenu", (e) => {
+            this.contextMenu(e);
+        })
+        this.parent.addEventListener("mouseleave", (e) => {
+            this.mouseLeave(e);
+        })
+        this.canvasElement.addEventListener("mouseup", (e) => {
+            this.mouseUp(e);
+        })
+        this.canvasElement.addEventListener("mousemove", (e) => {
+            this.mouseMove(e);
         })
     }
 
@@ -220,7 +268,7 @@ class Shape{
     drawShape(canvasCtx = this.canvasCtx){
         switch (this.shape) {
             case "line":
-                new Stroke(this.geometryInfo, canvasCtx, structuredClone(this.manager.strokeProperties), false, this.manager).drawStroke();
+                new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, false, this.manager).drawStroke();
                 return;
             case "triangle":
                 new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, true, this.manager).drawStroke();
@@ -321,16 +369,16 @@ class ShapeEditor{
             this.editCanvas.addEventListener("mousedown", (e) => {
                 if(e.button == 0){
                     this.editMode = true;
-                    this.beginPoint.x = e.x - this.manager.parent.offsetLeft;
-                    this.beginPoint.y = e.y - this.manager.parent.offsetTop;
-                    this.endPoint.x = e.x - this.manager.parent.offsetLeft;
-                    this.endPoint.y = e.y - this.manager.parent.offsetTop;
+                    this.beginPoint.x = e.x - this.manager.parent.offsetLeft - this.manager.translation.x;
+                    this.beginPoint.y = e.y - this.manager.parent.offsetTop - this.manager.translation.y;
+                    this.endPoint.x = e.x - this.manager.parent.offsetLeft - this.manager.translation.x;
+                    this.endPoint.y = e.y - this.manager.parent.offsetTop - this.manager.translation.y;
                 }
             })
             this.editCanvas.addEventListener("mousemove", (e) => {
                 if((e.button == 0) && this.editMode){
-                    this.endPoint.x = e.x - this.manager.parent.offsetLeft;
-                    this.endPoint.y = e.y - this.manager.parent.offsetTop;
+                    this.endPoint.x = e.x - this.manager.parent.offsetLeft - this.manager.translation.x;
+                    this.endPoint.y = e.y - this.manager.parent.offsetTop - this.manager.translation.y;
                     this.shape.geometryInfo = new geometryInfoGenerator(this.shape.shape, this.beginPoint, this.endPoint).generate();
                     this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height)
                     this.shape.drawShape(this.editCanvasCtx)
@@ -359,7 +407,7 @@ class ShapeEditor{
             this.points = [];
             this.editCanvas.addEventListener("click", (e) => {
                 this.editMode = true;
-                this.points.push(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
+                this.points.push(new Point(e.x - this.manager.parent.offsetLeft - this.manager.translation.x, e.y - this.manager.parent.offsetTop - this.manager.translation.y));
                 this.shape.geometryInfo = new geometryInfoGenerator(this.shape.shape, this.points).generate();
                 this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height)
                 this.shape.drawShape(this.editCanvasCtx)
@@ -438,6 +486,182 @@ class geometryInfoGenerator{
         }
 
         return geometryInfo;
+    }
+}
+
+class ConstraintDriver{
+    constructor(manager){
+        this.manager = manager;
+        this.constraintWindow = document.createElement("div");
+        this.constraintWindow.classList.add("constraint");
+        // this.constraintWindow.classList.add("active");
+        this.manager.parent.appendChild(this.constraintWindow);
+        this.constraints = [new ScaleConstraint(this.manager, this)]
+        this.currentConstraint = 0;
+        this.active = false;
+
+        for(let constraint of this.constraints){
+            this.constraintWindow.appendChild(constraint.shape)
+        }
+
+        this.constraintWindow.addEventListener("mousedown", (e) => {
+            let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
+            let x = contrain.x + this.manager.parent.offsetLeft
+            let y = contrain.y + this.manager.parent.offsetTop
+            this.manager.mouseDown(e, new Point(x, y));
+            // this.manager.mouseDown(e);
+        })
+        this.constraintWindow.addEventListener("mouseup", (e) => {
+            let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
+            let x = contrain.x + this.manager.parent.offsetLeft
+            let y = contrain.y + this.manager.parent.offsetTop
+            this.manager.mouseUp(e, new Point(x, y));
+            // this.manager.mouseUp(e);
+        })
+        this.constraintWindow.addEventListener("mousemove", (e) => {
+            let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
+            let x = contrain.x + this.manager.parent.offsetLeft
+            let y = contrain.y + this.manager.parent.offsetTop
+            this.manager.mouseMove(e, new Point(x, y));
+            // this.manager.mouseMove(e);
+        })
+    }
+
+    toggleActive(forcedActive = false){
+        this.active = forcedActive ? true : !this.active;
+        if(this.active){
+            this.constraintWindow.classList.add("active")
+            this.constraints.forEach((e) => {
+                e.inactive();
+            })
+            this.constraints[this.currentConstraint].active();
+        }
+        else{
+            this.constraintWindow.classList.remove("active")
+        }
+    }
+}
+
+class Constraint{
+    constructor(manager, driver){
+        this.manager = manager;
+        this.driver = driver;
+        this.mouseDownCoord = new Point();
+        this.currentMouseCoord = new Point();
+        this.shape = document.createElement("div");
+    }
+
+    active(){
+        this.shape.style.display = "initial";
+    }
+
+    inactive(){
+        this.shape.style.display = "none";
+    }
+}
+
+class ScaleConstraint extends Constraint{
+    constructor(manager, driver){
+        super(manager, driver);
+        this.label = "Scale";
+        this.shape.classList.add("scale");
+        this.scale = document.createElement("div");
+        this.shape.appendChild(this.scale);
+        this.panControl = document.createElement("div");
+        this.panControl.classList.add("scalePanControl");
+        this.shape.appendChild(this.panControl);
+        this.scale.classList.add("scaleScale")
+        this.shape.draggable = false;
+        this.canMove = false;
+        this.panZone = false;
+        this.canPan = true;
+        this.canRotate = false;
+        this.rotating = false;
+        this.inShape = false;
+        this.Db = dist(0, 0, this.manager.parent.offsetWidth/2, this.manager.parent.offsetHeight/2)
+        this.chi = Math.acos(this.shape.offsetWidth/(2*this.Db));
+        this.rt = new Point();
+        this.theta = 0;
+        this.slope = 0.00001;
+        this.panControl.addEventListener("mousemove", (e) => {
+            this.panZone = true;
+        })
+        this.panControl.addEventListener("mouseleave", (e) => {
+            this.panZone = false;
+        })
+        this.shape.addEventListener("mousemove", (e) => {
+            // e.stopPropagation();
+            // let contrain = this.constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
+            // let x = contrain.x + this.manager.parent.offsetLeft
+            // let y = contrain.y + this.manager.parent.offsetTop
+            // this.manager.mouseMove(e, new Point(x, y))
+            if(this.panZone && !this.rotating){
+                this.canPan = true;
+                this.canRotate = false;
+            }
+            else{                                                                                                               
+                this.canRotate = true;
+                this.canPan = false;
+            }
+            if(!this.inShape){
+                // this.manager.mouseUp(e);
+                this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
+            }
+            this.inShape = true;
+        })
+
+        this.shape.addEventListener("mouseleave", (e) => {
+            this.inShape = false;
+        })
+        this.shape.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            this.mouseDownCoord.x = e.x - this.shape.offsetLeft;
+            this.mouseDownCoord.y = e.y - this.shape.offsetTop;
+            this.canMove = true;
+        })
+        this.driver.constraintWindow.addEventListener("mousemove", (e) => {
+            e.stopPropagation();
+            let centerX = this.shape.offsetLeft + this.shape.offsetWidth/2;
+            let centerY = this.shape.offsetTop + this.shape.offsetHeight/2;
+            if(this.canMove && this.canPan){
+                this.shape.style.left = e.x - this.manager.parent.offsetLeft - this.mouseDownCoord.x  + "px";
+                this.shape.style.top = e.y - this.manager.parent.offsetTop - this.mouseDownCoord.y + "px";
+            }
+            else if(this.canMove && this.canRotate){
+                this.rotating = true;
+                let angle = Math.atan2(e.y - this.manager.parent.offsetTop - centerY, e.x - this.manager.parent.offsetLeft - centerX);
+                let slope = Math.tan(angle);
+                this.theta = angle;
+                this.slope = slope;
+                this.shape.style.rotate = (Math.atan2(e.y - this.manager.parent.offsetTop - centerY, e.x - this.manager.parent.offsetLeft - centerX)*180/Math.PI) + "deg"
+            }
+            let tempX = -1*(this.shape.offsetWidth/2);
+            let tempY = -1*(this.shape.offsetHeight/2)
+            this.rt.x = tempX*Math.cos(this.theta) - tempY*Math.sin(this.theta) + centerX - this.manager.parent.offsetLeft;
+            this.rt.y = tempX*Math.sin(this.theta) + tempY*Math.cos(this.theta) + centerY - this.manager.parent.offsetTop; 
+        })
+        this.driver.constraintWindow.addEventListener("mouseup", (e) => {
+            e.stopPropagation();
+            this.canMove = false;
+            this.canPan = false;
+            this.canRotate = false;
+            this.rotating = false;
+            this.mouseDownCoord.x = 0;
+            this.mouseDownCoord.y = 0;
+        })
+    }
+
+    constrain(point){
+        if(this.inShape){
+            let numerator = (point.x/this.slope) + (this.slope * this.rt.x) + point.y - this.rt.y;
+            let denominator = this.slope + (1/this.slope);
+            let x = numerator/denominator;
+            let y = this.slope*(x - this.rt.x) + this.rt.y;
+            return new Point(x, y)
+        }
+        else{
+            return new Point(point.x, point.y);
+        }
     }
 }
 
@@ -579,6 +803,26 @@ class CanvasCustomizationInterface {
         this.rectangleShape.innerText = "Rectangle";
         this.interfaceWindow.appendChild(this.rectangleShape);
 
+        // Eraser
+        this.eraser = document.createElement("button");
+        this.eraser.innerText = "Eraser";
+        this.interfaceWindow.appendChild(this.eraser);
+
+        // Clear
+        this.clear = document.createElement("button");
+        this.clear.innerText = "Clear";
+        this.interfaceWindow.appendChild(this.clear);
+
+        // Undo
+        this.undo = document.createElement("button");
+        this.undo.innerText = "Undo";
+        this.interfaceWindow.appendChild(this.undo);
+
+        // Redo
+        this.redo = document.createElement("button");
+        this.redo.innerText = "Redo";
+        this.interfaceWindow.appendChild(this.redo);
+
         //Fill Type Selector
         this.fillTypeSelector = document.createElement("button");
         this.fillTypeSelector.innerText = "Stroke & Fill";
@@ -652,6 +896,30 @@ class CanvasCustomizationInterface {
             // }
             this.manager.strokes.push(new Shape("rectangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
         })
+        this.eraser.addEventListener("click", () => {
+            // if (this.manager.shapeMode) {
+            //     return;
+            // }
+            this.colorPicker1.value = "#ffffff"
+        })
+        this.clear.addEventListener("click", () => {
+            this.manager.strokes = listenableArray();
+            this.manager.strokes.addCallback = () => {
+                this.manager.redoQueue = [];
+            }
+            this.manager.clearCanvas();
+        })
+
+        this.undo.addEventListener("click", () => {
+            this.manager.redoQueue.push(this.manager.strokes.pop());
+            this.manager.render();
+        })
+        this.redo.addEventListener("click", () => {
+            if(this.manager.redoQueue.length > 0){
+                this.manager.strokes.pushNC(this.manager.redoQueue.pop());
+                this.manager.render();
+            }
+        })
         this.fillTypeSelector.addEventListener("click", () => {
             this.fillType = (this.fillType + 1) % 3;
             this.fillTypeSelector.innerText = this.fillTypeArray[this.fillType];
@@ -673,6 +941,19 @@ class CanvasCustomizationInterface {
                     break;
             }
         })
+
+        for(let toolIndex in this.manager.constraintWindow.constraints){
+            toolIndex = parseInt(toolIndex);
+            let tool = this.manager.constraintWindow.constraints[toolIndex];
+            // console.log(this.manager.constraintWindow.constraints, too)
+            this[ "tool" + tool.label] = document.createElement("button");
+            this[ "tool" + tool.label].innerText = tool.label;
+            this.interfaceWindow.appendChild(this[ "tool" + tool.label]);
+            this[ "tool" + tool.label].addEventListener("click", () => {
+                this.manager.constraintWindow.toggleActive();
+                this.manager.constraintWindow.currentConstraint = toolIndex;
+            })
+        }
     }
     active(x = 10, y = 10){
         if(!this.activeStatus){
