@@ -68,8 +68,10 @@ class CanvasManager {
         this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
     }
 
-    render() {
-        this.clearCanvas();
+    render(clear = true) {
+        if(clear){
+            this.clearCanvas();
+        }
         for (let stroke of this.strokes) {
             if(stroke instanceof Stroke){
                 stroke.drawStroke();
@@ -80,17 +82,17 @@ class CanvasManager {
         }
     }
 
-    mouseDown(e, point){
+    mouseDown(e, point, forceDraw = false){
         let x = (point ? point.x : e.x) - this.parent.offsetLeft;
         let y = (point ? point.y : e.y) - this.parent.offsetTop;
-        if(e.button == 0){
+        if((e.button == 0) || forceDraw){
             this.penDown = true;
             this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
             let stroke = this.strokes.at(-1)
             stroke.add(new Point(x - this.translation.x, y - this.translation.y));
             stroke.drawStroke();
         }
-        if (e.button == 1) {
+        if ((e.button == 1) && (!forceDraw)) {
             e.preventDefault();
             this.translationBegin = new Point(x, y);
             // console.log(x, y);
@@ -107,12 +109,14 @@ class CanvasManager {
         this.canTranslate = false;
     }
 
-    mouseLeave(e){
-        if(e.button == 0){
+    mouseLeave(e,point, stopCompress = false ,forceDraw = false){
+        if((e.button == 0) || forceDraw){
             if(this.penDown){
                 this.penDown = false;
                 if(this.strokes.length != 0){
-                    this.strokes.at(-1).compress(this.compressMethods);
+                    if(!stopCompress){
+                        this.strokes.at(-1).compress(this.compressMethods);
+                    }
                 }
                 this.clearCanvas();
                 this.render();
@@ -121,20 +125,22 @@ class CanvasManager {
         this.canTranslate = false;
     }
 
-    mouseUp(e){
-        if(e.button == 0){
+    mouseUp(e, point, stopCompress = false, forceDraw = false){
+        if((e.button == 0) || forceDraw){
             if (this.penDown) {
                 this.penDown = false;
                 if(this.strokes.length != 0){
-                    console.log(this.strokes.at(-1).points.length);
-                    this.strokes.at(-1).compress(this.compressMethods);
-                    console.log(this.strokes.at(-1).points.length);
+                    // console.log(this.strokes.at(-1).points.length);
+                    if(!stopCompress){
+                        this.strokes.at(-1).compress(this.compressMethods);
+                    }
+                    // console.log(this.strokes.at(-1).points.length);
                 }
                 this.clearCanvas();
                 this.render();
             }
         }
-        if(e.button == 1){
+        if((e.button == 1) && !forceDraw){
             e.preventDefault();
             this.canTranslate = false;
         }
@@ -185,6 +191,16 @@ class CanvasManager {
         this.canvasElement.height = this.parent.offsetHeight;
         this.canvasElement.width = this.parent.offsetWidth;
         this.render();
+    }
+
+    getDataUrl(){
+        this.canvasCtx.fillStyle = "#ffffff";
+        this.canvasCtx.rect(0, 0, this.canvasElement.offsetHeight, this.canvasElement.offsetWidth)
+        this.canvasCtx.fill();
+        this.render(false);
+        let url = this.canvasElement.toDataURL().split(",")[1]
+        this.render();
+        return url
     }
 }
 
@@ -496,26 +512,38 @@ class ConstraintDriver{
         this.constraintWindow.classList.add("constraint");
         // this.constraintWindow.classList.add("active");
         this.manager.parent.appendChild(this.constraintWindow);
-        this.constraints = [new ScaleConstraint(this.manager, this)]
-        this.currentConstraint = 0;
+        this.constraints = [new ScaleConstraint(this.manager, this), new ProtractorConstraint(this.manager, this), new CompassConstraint(this.manager, this)]
+        this.currentConstraint = 2;
         this.active = false;
+        this.wasRotatable = false;
 
-        for(let constraint of this.constraints){
-            this.constraintWindow.appendChild(constraint.shape)
-        }
+        // for(let constraint of this.constraints){
+        //     this.constraintWindow.appendChild(constraint.shape)
+        // }
 
         this.constraintWindow.addEventListener("mousedown", (e) => {
             let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
-            let x = contrain.x + this.manager.parent.offsetLeft
-            let y = contrain.y + this.manager.parent.offsetTop
-            this.manager.mouseDown(e, new Point(x, y));
+            let x = contrain.x + this.manager.parent.offsetLeft;
+            let y = contrain.y + this.manager.parent.offsetTop;
+            let isForceDraw = (this.currentConstraint == 2) && this.constraints[this.currentConstraint].penCanRotate;
+            this.wasRotatable = isForceDraw;
+            this.manager.mouseDown(e, new Point(x, y), isForceDraw);
             // this.manager.mouseDown(e);
         })
         this.constraintWindow.addEventListener("mouseup", (e) => {
             let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
             let x = contrain.x + this.manager.parent.offsetLeft
             let y = contrain.y + this.manager.parent.offsetTop
-            this.manager.mouseUp(e, new Point(x, y));
+            this.manager.mouseUp(e, new Point(x, y), this.currentConstraint == 1 ? true : this.wasRotatable ? true : false, this.wasRotatable);
+            this.wasRotatable = false;
+            // this.manager.mouseUp(e);
+        })
+        this.constraintWindow.addEventListener("mouseleave", (e) => {
+            let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
+            let x = contrain.x + this.manager.parent.offsetLeft
+            let y = contrain.y + this.manager.parent.offsetTop
+            this.manager.mouseLeave(e, new Point(x, y), this.currentConstraint == 1 ? true : this.wasRotatable ? true : false, this.wasRotatable);
+            this.wasRotatable = false;
             // this.manager.mouseUp(e);
         })
         this.constraintWindow.addEventListener("mousemove", (e) => {
@@ -525,6 +553,8 @@ class ConstraintDriver{
             this.manager.mouseMove(e, new Point(x, y));
             // this.manager.mouseMove(e);
         })
+
+        this.toggleActive(true);
     }
 
     toggleActive(forcedActive = false){
@@ -537,6 +567,9 @@ class ConstraintDriver{
             this.constraints[this.currentConstraint].active();
         }
         else{
+            this.constraints.forEach((e) => {
+                e.inactive();
+            })
             this.constraintWindow.classList.remove("active")
         }
     }
@@ -549,6 +582,7 @@ class Constraint{
         this.mouseDownCoord = new Point();
         this.currentMouseCoord = new Point();
         this.shape = document.createElement("div");
+        this.driver.constraintWindow.appendChild(this.shape);
     }
 
     active(){
@@ -611,6 +645,10 @@ class ScaleConstraint extends Constraint{
         })
 
         this.shape.addEventListener("mouseleave", (e) => {
+            if(this.inShape){
+                // this.manager.mouseUp(e);
+                this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
+            }
             this.inShape = false;
         })
         this.shape.addEventListener("mousedown", (e) => {
@@ -662,6 +700,310 @@ class ScaleConstraint extends Constraint{
         else{
             return new Point(point.x, point.y);
         }
+    }
+}
+
+class ProtractorConstraint extends Constraint{
+    constructor(manager, driver){
+        super(manager, driver);
+        this.label = "Protractor";
+        this.shape.classList.add("protractor");
+        this.degreeQuantifier = document.createElement("span");
+        this.degreeQuantifier.innerText = "135deg"
+        this.shape.appendChild(this.degreeQuantifier)
+
+        this.inShape = false;
+        this.canMove = false;
+        this.radius = (this.shape.offsetWidth)/2;
+        this.centerX = this.radius;
+        this.centerY = this.radius;
+        this.shape.addEventListener("mousemove", (e) => {
+            // if(!this.inShape && this.manager.penDown){
+            //     // this.manager.mouseUp(e);
+            //     this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
+            // }
+            this.inShape = true;
+        })
+
+        this.shape.addEventListener("mouseleave", (e) => {
+            this.inShape = false;
+        })
+        this.shape.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            this.mouseDownCoord.x = e.x - this.shape.offsetLeft;
+            this.mouseDownCoord.y = e.y - this.shape.offsetTop;
+            this.canMove = true;
+        })
+
+        this.driver.constraintWindow.addEventListener("mousemove", (e) => {
+            e.stopPropagation();
+            if(this.canMove){
+                this.shape.style.left = e.x - this.manager.parent.offsetLeft - this.mouseDownCoord.x  + "px";
+                this.shape.style.top = e.y - this.manager.parent.offsetTop - this.mouseDownCoord.y + "px";
+            }
+            this.radius  = this.shape.offsetWidth/2;
+            this.centerX = this.shape.offsetLeft + this.radius;
+            this.centerY = this.shape.offsetTop + this.radius;
+            let angle = Math.round(Math.atan2(e.y - this.manager.parent.offsetTop -this.centerY, e.x - this.manager.parent.offsetLeft - this.centerX)*-180/Math.PI);
+            let constrainedAngle = Math.sign(angle) == 1 ? angle : Math.sign(angle) == -1 ? 360 + angle : angle
+            this.degreeQuantifier.innerText = `${constrainedAngle}deg`
+        })
+        this.driver.constraintWindow.addEventListener("mouseup", (e) => {
+            e.stopPropagation();
+            this.mouseDownCoord.x = 0;
+            this.mouseDownCoord.y = 0;
+            this.canMove = false;
+        })
+    }
+
+    constrain(point){
+        if(!this.inShape){
+            return point.copy();
+        }
+        else{
+            const theta = Math.atan2((point.y - this.centerY) , (point.x - this.centerX));
+            return new Point(this.radius*Math.cos(theta) + this.centerX, this.radius*Math.sin(theta) + this.centerY);
+        }
+    }
+}
+
+class CompassConstraint extends Constraint{
+    constructor(manager, driver){
+        super(manager, driver);
+        this.label = "Compass";
+        this.shape.classList.add("compass");
+        this.pinEnd = document.createElement("img");
+        this.pinEnd.draggable = false;
+        this.pinEnd.src = "images/compassPinEnd.svg";
+        this.pinEnd.classList.add("pinEnd")
+        this.shape.appendChild(this.pinEnd)
+        this.penEnd = document.createElement("img");
+        this.penEnd.draggable = false;
+        this.penEnd.src = "images/compassPenend.svg";
+        this.penEnd.classList.add("penEnd")
+        this.shape.appendChild(this.penEnd)
+        this.chi = Math.atan2(this.shape.offsetHeight, this.shape.offsetWidth)
+        this.diagonal = dist(0, 0, this.shape.offsetWidth, this.shape.offsetHeight)
+        this.size = this.pinEnd.offsetHeight/2;
+        this.distance = this.diagonal;
+        this.notch = document.createElement("div");
+        this.notch.classList.add("notch");
+        this.shape.appendChild(this.notch);
+        this.notchPrevTranslation = new Point(this.notch.offsetLeft, this.notch.offsetTop);
+        this.prevLocation = new Point(this.shape.offsetLeft, this.shape.offsetTop)
+        this.notchCanMove = false;
+        this.notch.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            this.notchCanMove = true;
+            this.notchPrevTranslation.x = e.x;
+            this.notchPrevTranslation.y = e.y;
+            this.prevLocation.x = this.shape.offsetLeft;
+            this.prevLocation.y = this.shape.offsetTop;
+        })
+
+        this.notch.addEventListener("mousemove", (e) => {
+            e.stopPropagation();
+            console.log((e.x - this.notchPrevTranslation.x))
+            if(this.notchCanMove){
+                this.shape.style.left = `${this.prevLocation.x + (e.x - this.notchPrevTranslation.x)}px`;
+                this.shape.style.top = `${this.prevLocation.y + (e.y - this.notchPrevTranslation.y)}px`;
+            }
+        })
+
+        this.notch.addEventListener("mouseleave", () => {
+            e.stopPropagation();
+            this.notchCanMove = false;
+        })
+
+        this.notch.addEventListener("mouseup", (e) => {
+            e.stopPropagation();
+            this.notchCanMove = false;
+        })
+        this.pinEnd.addEventListener("mousedown", (e) => {
+            e.stopPropagation()
+        })
+        this.penEnd.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+        })
+        this.pinController = document.createElement("div");
+        this.pinController.classList.add("pinController")
+        this.shape.appendChild(this.pinController)
+        this.penController = document.createElement("div");
+        this.penController.classList.add("penController")
+        this.shape.appendChild(this.penController)
+        this.pinCanMove = false;
+        this.pinController.addEventListener("mousedown",(e) => {
+            e.stopPropagation();
+            this.pinCanMove = true;
+        })
+        this.pinController.addEventListener("mouseup",(e) => {
+            e.stopPropagation();
+            this.pinCanMove = false;
+        })
+        this.pinController.addEventListener("mousemove",(e) => {
+            e.stopPropagation();
+            if(this.pinCanMove){
+                let tempX = e.x;
+                let tempY = e.y;
+                let pointX = this.shape.offsetLeft + this.penEnd.offsetLeft;
+                let pointY = this.shape.offsetTop + this.penEnd.offsetTop;
+                let distance = dist(tempX, tempY, pointX, pointY);
+                if(distance < 2*this.size){
+                    this.pinController.style.left = `${e.x - this.shape.offsetLeft}px`
+                    this.pinController.style.top = `${e.y - this.shape.offsetTop}px`
+                    this.pinEnd.style.left = `${e.x - this.shape.offsetLeft}px`
+                    this.pinEnd.style.top = `${e.y - this.shape.offsetTop}px`
+                    this.recalculate();
+                    this.inverseKinematics();
+
+                }
+            }
+        })
+        this.pinController.addEventListener("mouseleave", () => {
+            e.stopPropagation();
+            this.pinCanMove = false;
+        })
+        this.penCanMove = false;
+        this.penCanRotate = false;
+        this.penController.addEventListener("mousedown",(e) => {
+            if((e.button == 0) || (e.button == 2)){
+                e.stopPropagation();
+            }
+            this.penCanMove = true;
+            this.penCanRotate = false;
+            if(e.button == 1){
+                let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
+                let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
+                let pointX = this.shape.offsetLeft + this.penEnd.offsetLeft;
+                let pointY = this.shape.offsetTop + this.penEnd.offsetTop;
+                let distance = dist(tempX, tempY, pointX, pointY);
+                this.distance = distance;
+                this.penCanRotate = true;
+                this.penCanMove = false;
+            }
+        })
+        this.penController.addEventListener("mouseup",(e) => {
+            this.penCanMove = false;
+            this.penCanRotate = false;
+        })
+        this.penController.addEventListener("mousemove",(e) => {
+            if(this.penCanMove){
+                e.stopPropagation();
+                let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
+                let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
+                let pointX = e.x;
+                let pointY = e.y;
+                let distance = dist(tempX, tempY, pointX, pointY);
+                if(distance < 2*this.size){
+                    this.penController.style.left = `${e.x - this.shape.offsetLeft}px`
+                    this.penController.style.top = `${e.y - this.shape.offsetTop}px`
+                    this.penEnd.style.left = `${e.x - this.shape.offsetLeft}px`
+                    this.penEnd.style.top = `${e.y - this.shape.offsetTop}px`
+                    this.recalculate();
+                    this.inverseKinematics();
+                }
+            }
+        })
+        this.penController.addEventListener("mouseleave", () => {
+            e.stopPropagation();
+            this.penCanMove = false;
+        })
+        this.driver.constraintWindow.addEventListener("mousemove", (e) => {
+            if(this.penCanRotate){
+                let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
+                let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
+                let pointX = this.shape.offsetLeft + this.penEnd.offsetLeft;
+                let pointY = this.shape.offsetTop + this.penEnd.offsetTop;
+                let distance = dist(tempX, tempY, pointX, pointY);
+                let theta = Math.atan2(e.y - tempY, e.x - tempX);
+                let x = distance*Math.cos(theta) + tempX;
+                let y = distance*Math.sin(theta) + tempY;
+                this.penController.style.left = `${x - this.shape.offsetLeft}px`
+                this.penController.style.top = `${y - this.shape.offsetTop}px`
+                this.penEnd.style.left = `${x - this.shape.offsetLeft}px`
+                this.penEnd.style.top = `${y - this.shape.offsetTop}px`
+                this.recalculate();
+                this.inverseKinematics();
+            }
+        })
+        this.driver.constraintWindow.addEventListener("mouseup", () => {
+            this.penCanMove = false;
+            this.penCanRotate = false;
+            this.manager.penDown = false;
+            // console.log("upped")
+        })
+        this.penController.addEventListener("contextmenu", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            this.penCanRotate = false;
+        })
+        this.pinController.addEventListener("contextmenu", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+        })
+        this.pinEnd.addEventListener("load", () => {
+            this.size = this.pinEnd.offsetHeight/2;
+            this.recalculate();
+            this.inverseKinematics();
+            this.driver.toggleActive();
+        })
+        document.addEventListener("DOMContentLoaded", () => {
+            this.recalculate();
+            this.inverseKinematics();
+            this.distance = this.diagonal;
+        })
+        
+        this.shape.addEventListener("resize", (e) => {
+            e.stopPropagation();
+            this.recalculate();
+            this.inverseKinematics();
+        })
+
+        this.manager.parent.addEventListener("resize", () => {
+            this.recalculate();
+            this.inverseKinematics();
+        })
+    }
+
+    active(){
+        this.shape.style.display = "initial";
+        this.recalculate();
+        this.inverseKinematics();
+    }
+
+    recalculate(){
+        this.chi = Math.atan2(this.shape.offsetHeight, this.shape.offsetWidth)
+        this.diagonal = dist(0, 0, this.shape.offsetWidth, this.shape.offsetHeight)
+    }
+
+    inverseKinematics(){
+        let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
+        let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
+        let pointX = this.shape.offsetLeft + this.penEnd.offsetLeft;
+        let pointY = this.shape.offsetTop + this.penEnd.offsetTop;
+        let distance = dist(tempX, tempY, pointX, pointY);
+        if(distance < this.size * 2){
+            let ikPoint = ik(new Point(this.shape.offsetLeft + this.pinEnd.offsetLeft, this.shape.offsetTop + this.pinEnd.offsetTop), new Point(this.penEnd.offsetLeft + this.shape.offsetLeft, this.penEnd.offsetTop + this.shape.offsetTop), this.size, this.size);
+            let theta1 = Math.atan2(ikPoint.y - this.shape.offsetTop - this.pinEnd.offsetTop, ikPoint.x - this.shape.offsetLeft - this.pinEnd.offsetLeft) ;
+            let theta2 = Math.atan2(ikPoint.y - this.shape.offsetTop - this.penEnd.offsetTop, ikPoint.x - this.shape.offsetLeft - this.penEnd.offsetLeft);
+            this.notch.style.left = `${ikPoint.x - this.shape.offsetLeft}px`
+            this.notch.style.top = `${ikPoint.y - this.shape.offsetTop}px`
+            this.pinEnd.style.setProperty("rotate", (theta1*180/Math.PI) + 90 + "deg");
+            this.penEnd.style.setProperty("rotate" , (theta2*180/Math.PI) + 90 + "deg");
+        }
+    }
+
+    constrain(point){
+        if(this.penCanRotate){
+            let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
+            let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
+            let distance = this.distance;
+            let theta = Math.atan2(point.y - tempY, point.x - tempX);
+            let x = distance*Math.cos(theta) + tempX;
+            let y = distance*Math.sin(theta) + tempY;
+            return new Point(x, y)
+        }
+        return point
     }
 }
 
@@ -755,6 +1097,14 @@ function dist(x1, y1, x2, y2){
     let dy = y2 - y1;
     return Math.sqrt(dx**2 + dy**2);
 }
+
+function ik(a, b, A, B) {
+    let C = dist(a.x, a.y, b.x, b.y)
+    let th = Math.acos( (B**2 + C**2 - A**2) / (2*B*C) )
+    let phi = Math.atan2(-(b.y - a.y), b.x - a.x)
+    
+    return new Point(a.x + B*Math.cos(th + phi), a.y - B*Math.sin(th + phi))
+  }
 
 class CanvasCustomizationInterface {
     constructor(manager) {
@@ -950,8 +1300,19 @@ class CanvasCustomizationInterface {
             this[ "tool" + tool.label].innerText = tool.label;
             this.interfaceWindow.appendChild(this[ "tool" + tool.label]);
             this[ "tool" + tool.label].addEventListener("click", () => {
-                this.manager.constraintWindow.toggleActive();
-                this.manager.constraintWindow.currentConstraint = toolIndex;
+                console.log(toolIndex);
+                if(toolIndex == 2){
+                    tool.recalculate();
+                    tool.inverseKinematics();
+                }
+                if(this.manager.constraintWindow.currentConstraint == toolIndex){
+                    this.manager.constraintWindow.currentConstraint = toolIndex;
+                    this.manager.constraintWindow.toggleActive();
+                }
+                else{
+                    this.manager.constraintWindow.currentConstraint = toolIndex;
+                    this.manager.constraintWindow.toggleActive(true);
+                }
             })
         }
     }

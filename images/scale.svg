@@ -1,17 +1,16 @@
 <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_2708_3)">
-<rect width="30" height="30" fill="white"/>
-<path d="M15.9996 20.9881L15.9997 -0.011909" stroke="#C8C8C8"/>
-<line x1="0.5" y1="30" x2="0.5" stroke="#838383"/>
-<line x1="19.5" y1="14" x2="19.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<line x1="22.5" y1="14" x2="22.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<line x1="25.5" y1="14" x2="25.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<line x1="28.5" y1="14" x2="28.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<line x1="3.5" y1="14" x2="3.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<line x1="6.5" y1="14" x2="6.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<line x1="9.5" y1="14" x2="9.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<line x1="12.5" y1="14" x2="12.5" stroke="#C8C8C8" stroke-dasharray="2 2"/>
-<circle cx="16" cy="1.25" r="1.25" fill="#838383"/>
+<path d="M15.9996 20.9881L15.9997 -0.011909" stroke="black"/>
+<line x1="0.5" y1="30" x2="0.5" stroke="black"/>
+<line x1="19.5" y1="14" x2="19.5" stroke="black"/>
+<line x1="22.5" y1="14" x2="22.5" stroke="black"/>
+<line x1="25.5" y1="14" x2="25.5" stroke="black"/>
+<line x1="28.5" y1="14" x2="28.5" stroke="black"/>
+<line x1="3.5" y1="14" x2="3.5" stroke="black"/>
+<line x1="6.5" y1="14" x2="6.5" stroke="black"/>
+<line x1="9.5" y1="14" x2="9.5" stroke="black"/>
+<line x1="12.5" y1="14" x2="12.5" stroke="black"/>
+<circle cx="16" cy="1.25" r="1.25" fill="black"/>
 </g>
 <defs>
 <clipPath id="clip0_2708_3">
