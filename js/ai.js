@@ -17,13 +17,14 @@ export class AI{
         this.createResponseButton = document.createElement("button");
         this.createResponseButton.addEventListener("click", this.run)
         this.createResponseButton.innerText = "Explain";
+        this.run = this.run.bind(this)
         this.parent.appendChild(this.createResponseButton);
         console.log(this.manager)
     }
-    async run(){
-        let url = Canvas.getDataUrl();
-        Ai.imageDataURL.inlineData.data = url;
-        const result = await model.generateContent([Ai.imageDataURL, Ai.prompt]);
+    run = async () => {
+        let url = this.manager.getDataUrl();
+        this.imageDataURL.inlineData.data = url;
+        const result = await model.generateContent([this.imageDataURL, this.prompt]);
         console.log(result.response.text());
     }
 

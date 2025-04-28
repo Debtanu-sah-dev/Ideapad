@@ -175,8 +175,8 @@ body{
 }
 
 .compass{
-    width: 50%;
-    height: 50%;
+    width: 50vmin;
+    height: 50vmin;
     position: absolute;
     top: 25%;
     left: 25%;
