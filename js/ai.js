@@ -1,6 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(API_KEY);
-const model = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-04-17"});
+const generationConfigs = {
+    temperature: 2,
+    responseMimeType: 'text/plain'
+}
+const model = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-04-17", generationConfig: generationConfigs});
 // const model = genAI.getGenerativeModel({model: "gemini-2.0-flash"});
 const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject.";
 export class AI{
@@ -26,6 +30,12 @@ export class AI{
             // })
         this.responseContainer = document.createElement("div");
         this.responseContainer.classList.add("responseContainer")
+        this.close = document.createElement("button");
+        this.close.innerText = "X";
+        this.close.addEventListener("click", () => {
+            this.dialog.close();
+        })
+        this.dialog.appendChild(this.close);
         this.dialog.appendChild(this.responseContainer);
 
         this.responseImage = document.createElement("img");
