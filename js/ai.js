@@ -79,5 +79,113 @@ function mathRectify(element){
 
 }
 
+class AppletManager{
+    constructor(manager, model, ai, parent){
+        this.ai = ai;
+        this.manager = manager;
+        this.model = model;
+        this.parent = parent;
+        this.appletButton = document.createElement("button");
+        this.appletButton.innerText = "Applet";
+        this.appletMenu = document.createElement("dialog");
+        this.appletMenu.setAttribute("closedby", "any");
+        this.appletMenu.classList.add("appletMenu")
+        this.parent.appendChild(this.appletButton);
+        this.parent.appendChild(this.appletMenu)
+        this.appletButton.addEventListener("click", () => {
+            this.appletMenu.showModal();
+        })
+        this.applets = [];
+        this.tabContainer = document.createElement("div");
+        this.tabContainer.classList.add("tabContainer")
+        this.tabs = document.createElement("div");
+        this.tabs.classList.add("tabs")
+        this.tabContainer.appendChild(this.tabs);
+        this.add = document.createElement("button");
+        this.add.innerText = "+"
+        this.addContainer = document.createElement("div");
+        this.add.addEventListener("click", () => {
+            this.applets.forEach((e) => {
+                e.inactive();
+            })
+            this.addContainer.style.display = "initial"
+        })
+
+        this.labelInput = document.createElement("input");
+        this.labelInput.type = "input";
+        this.submitMetaData = document.createElement("button");
+        this.submitMetaData.innerText = "Create Applet";
+        this.submitMetaData.addEventListener("click", async () => {
+            this.createApplet({
+                label: this.labelInput.value
+            })
+            this.addContainer.style.display = "none";
+            this.applets.forEach((e) => {
+                e.inactive();
+            })
+            this.applets[this.applets.length - 1].active();
+        })
+        this.addContainer.appendChild(this.labelInput);
+        this.addContainer.appendChild(this.submitMetaData)
+        this.close = document.createElement("button");
+        this.close.innerText = "X"
+        this.close.addEventListener("click", () => {
+            this.appletMenu.close();
+        })
+
+        this.tools = document.createElement("div");
+        this.tools.classList.add("tools")
+        this.tools.appendChild(this.add)
+        this.tools.appendChild(this.close)
+        this.tabContainer.appendChild(this.tools)
+        this.contentContainers = [];
+        this.contentContainer = document.createElement("div");
+        this.contentContainer.classList.add("contentContainer");
+        this.contentContainer.appendChild(this.addContainer);
+        this.appletMenu.appendChild(this.tabContainer);
+        this.appletMenu.appendChild(this.contentContainer);
+
+    }
+
+    createApplet(metaData){
+        let container = document.createElement("div");
+        container.dataset.applet = metaData.label;
+        this.contentContainers.push(container);
+        this.contentContainer.appendChild(container);
+        let applet = new Applet(metaData, container)
+        this.applets.push(applet);
+        let tab = document.createElement("button");
+        tab.innerText = metaData.label;
+        tab.addEventListener("click", () => {
+            this.addContainer.style.display = "none";
+            this.applets.forEach((e) => {
+                e.inactive();
+            })
+            applet.active();
+        })
+        this.tabs.appendChild(tab)
+    }
+}
+
+class Applet{
+    constructor({
+        label = "Untitled",
+    }, parent){
+        this.label = label;
+        this.parent = parent;
+        this.parent.style.display = "none";
+        this.parent.innerText = this.label
+    }
+
+    active(){
+        this.parent.style.display = "initial"
+    }
+
+    inactive(){
+        this.parent.style.display = "none"
+    }
+}
+
 const ai = document.querySelector("#ai");
 const Ai = new AI(Canvas, model, prompt, ai);
+const appletManager = new AppletManager(Canvas, model, Ai, ai);
