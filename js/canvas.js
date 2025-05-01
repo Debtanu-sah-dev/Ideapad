@@ -68,16 +68,16 @@ class CanvasManager {
         this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
     }
 
-    render(clear = true) {
+    render(canvasCtx = this.canvasCtx, clear = true) {
         if(clear){
             this.clearCanvas();
         }
         for (let stroke of this.strokes) {
             if(stroke instanceof Stroke){
-                stroke.drawStroke();
+                stroke.drawStroke(canvasCtx);
             }
             if(stroke instanceof Shape){
-                stroke.drawShape();
+                stroke.drawShape(canvasCtx);
             }
         }
     }
@@ -194,12 +194,27 @@ class CanvasManager {
     }
 
     getDataUrl(){
-        this.canvasCtx.fillStyle = "#ffffff";
-        this.canvasCtx.rect(0, 0, this.canvasElement.offsetHeight, this.canvasElement.offsetWidth)
-        this.canvasCtx.fill();
-        this.render(false);
-        let url = this.canvasElement.toDataURL().split(",")[1]
-        this.render();
+        let proxyCanvas = document.createElement("canvas");
+        proxyCanvas.width = this.canvasElement.width;
+        proxyCanvas.height = this.canvasElement.height;
+        let ctx = proxyCanvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.rect(0, 0, proxyCanvas.width, proxyCanvas.height)
+        ctx.fill();
+        this.render(ctx, false);
+        const imageData = ctx.getImageData(0, 0, proxyCanvas.width, proxyCanvas.height);
+        const data = imageData.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) { // Check if alpha is transparent
+            data[i] = 255;        // Set Red to white
+            data[i + 1] = 255;    // Set Green to white
+            data[i + 2] = 255;    // Set Blue to white
+        }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        let url = proxyCanvas.toDataURL().split(",");
         return url
     }
 }
@@ -801,22 +816,21 @@ class CompassConstraint extends Constraint{
             this.prevLocation.y = this.shape.offsetTop;
         })
 
-        this.notch.addEventListener("mousemove", (e) => {
-            e.stopPropagation();
-            console.log((e.x - this.notchPrevTranslation.x))
+        this.driver.constraintWindow.addEventListener("mousemove", (e) => {
+            // e.stopPropagation();
             if(this.notchCanMove){
                 this.shape.style.left = `${this.prevLocation.x + (e.x - this.notchPrevTranslation.x)}px`;
                 this.shape.style.top = `${this.prevLocation.y + (e.y - this.notchPrevTranslation.y)}px`;
             }
         })
 
-        this.notch.addEventListener("mouseleave", () => {
-            e.stopPropagation();
+        this.driver.constraintWindow.addEventListener("mouseleave", () => {
+            // e.stopPropagation();
             this.notchCanMove = false;
         })
 
-        this.notch.addEventListener("mouseup", (e) => {
-            e.stopPropagation();
+        this.driver.constraintWindow.addEventListener("mouseup", (e) => {
+            // e.stopPropagation();
             this.notchCanMove = false;
         })
         this.pinEnd.addEventListener("mousedown", (e) => {
@@ -836,12 +850,12 @@ class CompassConstraint extends Constraint{
             e.stopPropagation();
             this.pinCanMove = true;
         })
-        this.pinController.addEventListener("mouseup",(e) => {
-            e.stopPropagation();
+        this.driver.constraintWindow.addEventListener("mouseup",(e) => {
+            // e.stopPropagation();
             this.pinCanMove = false;
         })
-        this.pinController.addEventListener("mousemove",(e) => {
-            e.stopPropagation();
+        this.driver.constraintWindow.addEventListener("mousemove",(e) => {
+            // e.stopPropagation();
             if(this.pinCanMove){
                 let tempX = e.x;
                 let tempY = e.y;
@@ -859,8 +873,8 @@ class CompassConstraint extends Constraint{
                 }
             }
         })
-        this.pinController.addEventListener("mouseleave", () => {
-            e.stopPropagation();
+        this.driver.constraintWindow.addEventListener("mouseleave", () => {
+            // e.stopPropagation();
             this.pinCanMove = false;
         })
         this.penCanMove = false;
@@ -882,13 +896,13 @@ class CompassConstraint extends Constraint{
                 this.penCanMove = false;
             }
         })
-        this.penController.addEventListener("mouseup",(e) => {
+        this.driver.constraintWindow.addEventListener("mouseup",(e) => {
             this.penCanMove = false;
             this.penCanRotate = false;
         })
-        this.penController.addEventListener("mousemove",(e) => {
+        this.driver.constraintWindow.addEventListener("mousemove",(e) => {
             if(this.penCanMove){
-                e.stopPropagation();
+                // e.stopPropagation();
                 let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
                 let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
                 let pointX = e.x;
@@ -904,8 +918,8 @@ class CompassConstraint extends Constraint{
                 }
             }
         })
-        this.penController.addEventListener("mouseleave", () => {
-            e.stopPropagation();
+        this.driver.constraintWindow.addEventListener("mouseleave", () => {
+            // e.stopPropagation();
             this.penCanMove = false;
         })
         this.driver.constraintWindow.addEventListener("mousemove", (e) => {
@@ -1300,7 +1314,6 @@ class CanvasCustomizationInterface {
             this[ "tool" + tool.label].innerText = tool.label;
             this.interfaceWindow.appendChild(this[ "tool" + tool.label]);
             this[ "tool" + tool.label].addEventListener("click", () => {
-                console.log(toolIndex);
                 if(toolIndex == 2){
                     tool.recalculate();
                     tool.inverseKinematics();

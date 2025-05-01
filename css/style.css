@@ -253,3 +253,40 @@ body{
     background-image: var(--noise);
     border-radius: 100vmax;
 }
+
+pre{
+    background-color: #111 !important;
+}
+
+.aiDialog{
+    font-size: 1rem;
+}
+
+pre span.token.property{
+    color: #00b1ff;
+}
+
+pre > code {
+    color: #ffdeee !important;
+}
+
+pre {
+    color: #ffdeee !important;
+}
+
+pre span.token.selector , pre span.token.attr-name, pre span.token.function{
+    color: #aaff00 !important;
+}
+pre span.token.attr-value, pre span.token.builtin,  pre span.token.string{
+    color: #ffee50;
+}
+
+pre span.token.parameter{
+    color: rgb(255, 136, 0);
+}
+pre span.token.operator, pre span.token.keyword{
+    color: #F92672;
+}
+pre span.token.punctuation {
+    color: #d4a7ff !important;
+}
