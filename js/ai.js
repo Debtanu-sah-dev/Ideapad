@@ -2,7 +2,7 @@ import { GoogleGenerativeAI} from "@google/generative-ai";
 // console.log(Type);
 const genAI = new GoogleGenerativeAI(API_KEY);
 const generationConfig = {
-    model:"gemini-2.5-flash-preview-04-17",
+    model:"gemini-2.5-pro-exp-03-25",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -36,11 +36,26 @@ const generationConfig = {
           }
     }
   };
+const generationConfigForRectification = {
+    model:"gemini-2.5-flash-preview-04-17",
+    generationConfig:{
+        responseMimeType: 'application/json',
+        responseSchema: {
+            "type": "object",
+            "properties": {
+                "html": { "type": "string" },
+            },
+            "required": ["html"]
+        }
+   }
+};
 const model = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-04-17"});
 const modelApplet = genAI.getGenerativeModel(generationConfig);
+const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
 const modelFast = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-04-17"});
 const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject.";
 const metaPrompt = "Explain this image and give a small summary of what is illustrated and what topic and frameworks it is based on, give description of this image giving a complete picture of the image in just 100 words altogether.";
+const rectificationPrompt = `check and rectify the above code, check for any potential errors and fix it. remove any html, CSS or JavaScript comments. remove all the comments strictly. check that all CSS properties are valid else fix it, check all html tags and attributes are proper and no attribute is mixed with the tag name like:- <pid="paragraph">...</p> is wrong so make it <p id="paragraph">...</p>. In JavaScript check for any functions which are called but not defined:-Example makeGraph() is called somewhere in the entire code but is not made so write the make graph function by understanding the HTML codes context and make it so it works with the integrity of the HTML code without giving rise to another error, check for any syntax error like extra }, ), not using proper syntax etc. use this cdn for p5.js, <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.js"></script>.`;
 const inputType = [
     "button",
     "checkbox",
@@ -143,7 +158,7 @@ export class AI{
         this.responseImage.src = url.join(",");
         this.imageDataURL.inlineData.data = url[1];
         const result = await modelFast.generateContent([structuredClone(this.imageDataURL), metaPrompt]);
-        console.log(result.response.text())
+        // console.log(result.response.text())
         return result.response.text();
     }
 }
@@ -261,7 +276,10 @@ class Applet{
         this.description = description
         this.parent = parent;
         this.parent.style.display = "none";
-        this.parent.innerText = "Loading...";
+        // this.parent.innerText = "Loading...";
+        this.iframe = document.createElement("iframe");
+        this.iframe.classList.add("appletIframe")
+        this.parent.appendChild(this.iframe)
         this.generateApplet();
     }
 
@@ -277,8 +295,13 @@ class Applet{
         const result = await modelApplet.generateContent([structuredClone(Ai.imageDataURL), fullPrompt]);
         // console.log(result.response.text())
         // console.log(JSON.parse(result.response.text()))
-        console.log(JSON.parse(result.response.text()).html)
-        this.parent.innerText = result.response.text();
+        // console.log(JSON.parse(result.response.text()).html)
+        // this.parent.innerText = result.response.text();
+        const rectifiedHTML = await modelRectify.generateContent([`${JSON.parse(result.response.text()).html}
+${rectificationPrompt}`])
+
+        this.iframe.srcdoc = JSON.parse(rectifiedHTML.response.text()).html;
+        // console.log(JSON.parse(rectifiedHTML.response.text()).html)
     }
 
     active(){

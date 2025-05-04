@@ -305,6 +305,7 @@ pre span.token.punctuation {
     display: flex;
     flex-direction: column;
     flex: 1 1 0;
+    overflow: hidden;
 }
 
 .tabContainer{
@@ -339,4 +340,11 @@ pre span.token.punctuation {
 dialog:modal{
     max-width: 100vw;
     max-height: 100vh;
+}
+
+.appletIframe{
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
 }
