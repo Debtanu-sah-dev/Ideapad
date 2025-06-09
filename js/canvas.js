@@ -1,3 +1,8 @@
+function isTouchscreen() {
+  const hasFinePointer = window.matchMedia("(any-pointer: fine)").matches;
+  return !hasFinePointer;
+}
+
 function listenableArray(...args) {
     let a = [...args];
     a.addCallback = () => {
@@ -56,11 +61,17 @@ class CanvasManager {
         this.prevTranslation = this.translation.copy();
         this.move = new Point(0, 0);
         this.canTranslate = false;
+        this.translateInterface = document.createElement("div");
+        this.translateInterface.classList.add("translateInterface");
+        // this.translateInterface.classList.add("active");
+        this.parent.appendChild(this.translateInterface)
         this.controlManager();
         this.penDown = false;
         this.shapeMode = false;
         this.fitCanvasElement();
-        this.constraintWindow = new ConstraintDriver(this);
+        if(!isTouchscreen()){
+            this.constraintWindow = new ConstraintDriver(this);
+        }
         this.canvasCustomizationInterface = new CanvasCustomizationInterface(this);
     }
 
@@ -163,8 +174,8 @@ class CanvasManager {
             this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
             this.render();
         }
-        this.currentMouseCoord.x = e.x - this.parent.offsetLeft - this.translation.x;
-        this.currentMouseCoord.y = e.y - this.parent.offsetTop - this.translation.y;
+        this.currentMouseCoord.x = Math.round(e.x - this.parent.offsetLeft - this.translation.x);
+        this.currentMouseCoord.y = Math.round(e.y - this.parent.offsetTop - this.translation.y);
 
         this.coordCounter.innerText = `${this.currentMouseCoord.x}, ${ this.currentMouseCoord.y}`
     }
@@ -184,6 +195,35 @@ class CanvasManager {
         })
         this.canvasElement.addEventListener("mousemove", (e) => {
             this.mouseMove(e);
+        })
+        this.translateInterface.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            let x = e.x - this.parent.offsetLeft;
+            let y = e.y - this.parent.offsetTop;
+            this.translationBegin = new Point(x, y);
+            // console.log(x, y);
+            this.canTranslate = true;
+            this.penDown = false;
+            this.prevTranslation = this.translation.copy();
+            // this.translateInterface.style.cursor = "grabbing"
+        })
+        this.translateInterface.addEventListener("mouseup", (e) => {
+            e.preventDefault();
+            this.canTranslate = false;
+            // this.translateInterface.style.cursor = "grab"
+        })
+        this.translateInterface.addEventListener("mousemove", (e) => {
+            e.preventDefault();
+            if(this.canTranslate){
+                let x = e.x - this.parent.offsetLeft;
+                let y = e.y - this.parent.offsetTop;
+                this.move.x = x - this.translationBegin.x;
+                this.move.y = y - this.translationBegin.y;
+                this.translation.x = this.prevTranslation.x + this.move.x
+                this.translation.y = this.prevTranslation.y + this.move.y
+                this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+                this.render();
+            }
         })
     }
 
@@ -294,6 +334,7 @@ class Shape{
         this.manager = manager;
         this.shapeEditor = new ShapeEditor(this, manager)
         this.manager.shapeMode = true;
+        this.killed = false;
     }
 
     drawShape(canvasCtx = this.canvasCtx){
@@ -376,6 +417,13 @@ class Shape{
         const width = this.geometryInfo.width; // width
         canvasCtx.rect(x, y, width, height);
     }
+
+    endFreeShape(){
+        if(this.shape == "freeShape"){
+            this.shapeEditor.killEditor();
+            this.killed = true;
+        }
+    }
 }
 
 class ShapeEditor{
@@ -452,6 +500,14 @@ class ShapeEditor{
             this.manager.render();
             this.manager.shapeMode = false;
         })
+    }
+
+    killEditor(){
+        this.editMode = false;
+        this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
+        this.manager.parent.removeChild(this.editCanvas);
+        this.manager.render();
+        this.manager.shapeMode = false;
     }
 }
 
@@ -1192,6 +1248,10 @@ class CanvasCustomizationInterface {
         this.fillTypeSelector.innerText = "Stroke & Fill";
         this.interfaceWindow.appendChild(this.fillTypeSelector);
 
+        this.pan = document.createElement("button");
+        this.pan.innerText = "Pan";
+        this.interfaceWindow.appendChild(this.pan);
+
         this.fillTypeArray = ["Stroke & Fill", "Stroke", "Fill"];
         this.fillType = 0;
 
@@ -1204,6 +1264,18 @@ class CanvasCustomizationInterface {
         this.interfaceWindow.appendChild(this.thicknessSlider)
         manager.parent.appendChild(this.interfaceWindow);
         manager.parent.appendChild(this.interfaceWindowBackdrop);
+        this.pan.addEventListener("click", () => {
+            if(!this.manager.translateInterface.classList.contains("active")){
+                this.manager.translateInterface.classList.add("active");
+                if(this.touchscreenInterface){
+                    this.touchscreenInterface.innerText = "Stop Panning"
+                }
+                this.inactive();
+            }
+            else{
+                this.manager.translateInterface.classList.remove("active");
+            }
+        })
         this.interfaceWindowBackdrop.addEventListener("click", () => {
             this.inactive();
         })
@@ -1230,11 +1302,17 @@ class CanvasCustomizationInterface {
             // }
             this.manager.strokes.push(new Shape("triangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
         })
+        let latestFreeShape = null;
         this.freeShape.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.manager.strokes.push(new Shape("freeShape", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+            let shape = new Shape("freeShape", this.manager.canvasCtx, this.shapeProperties, null, this.manager);
+            latestFreeShape = shape;
+            this.manager.strokes.push(shape);
+            if(this.touchscreenInterface){
+                this.touchscreenInterface.innerText = "End FreeShape"
+            }
         })
         this.circleShape.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
@@ -1306,31 +1384,53 @@ class CanvasCustomizationInterface {
             }
         })
 
-        for(let toolIndex in this.manager.constraintWindow.constraints){
-            toolIndex = parseInt(toolIndex);
-            let tool = this.manager.constraintWindow.constraints[toolIndex];
-            // console.log(this.manager.constraintWindow.constraints, too)
-            this[ "tool" + tool.label] = document.createElement("button");
-            this[ "tool" + tool.label].innerText = tool.label;
-            this.interfaceWindow.appendChild(this[ "tool" + tool.label]);
-            this[ "tool" + tool.label].addEventListener("click", () => {
-                if(toolIndex == 2){
-                    tool.recalculate();
-                    tool.inverseKinematics();
-                }
-                if(this.manager.constraintWindow.currentConstraint == toolIndex){
-                    this.manager.constraintWindow.currentConstraint = toolIndex;
-                    this.manager.constraintWindow.toggleActive();
-                }
-                else{
-                    this.manager.constraintWindow.currentConstraint = toolIndex;
-                    this.manager.constraintWindow.toggleActive(true);
-                }
-            })
+        if(!isTouchscreen()){
+            for(let toolIndex in this.manager.constraintWindow.constraints){
+                toolIndex = parseInt(toolIndex);
+                let tool = this.manager.constraintWindow.constraints[toolIndex];
+                // console.log(this.manager.constraintWindow.constraints, too)
+                this[ "tool" + tool.label] = document.createElement("button");
+                this[ "tool" + tool.label].innerText = tool.label;
+                this.interfaceWindow.appendChild(this[ "tool" + tool.label]);
+                this[ "tool" + tool.label].addEventListener("click", () => {
+                    if(toolIndex == 2){
+                        tool.recalculate();
+                        tool.inverseKinematics();
+                    }
+                    if(this.manager.constraintWindow.currentConstraint == toolIndex){
+                        this.manager.constraintWindow.currentConstraint = toolIndex;
+                        this.manager.constraintWindow.toggleActive();
+                    }
+                    else{
+                        this.manager.constraintWindow.currentConstraint = toolIndex;
+                        this.manager.constraintWindow.toggleActive(true);
+                    }
+                })
+            }
         }
+        this.touchscreenInterface = document.createElement("button")
+        this.touchscreenInterface.innerText = "Tools"
+        document.querySelector("#ai").appendChild(this.touchscreenInterface)
+        this.touchscreenInterface.addEventListener("click", () => {
+            if(latestFreeShape != null){
+                console.log(latestFreeShape);
+                if(!latestFreeShape.killed){
+                    latestFreeShape.endFreeShape();
+                }
+            }
+            if(this.activeStatus){
+                this.inactive();
+            }
+            else{
+                this.active();
+            }
+        })
     }
     active(x = 10, y = 10){
         if(!this.activeStatus){
+            if(this.touchscreenInterface){
+                this.touchscreenInterface.innerText = "Tools"
+            }
             this.activeStatus = true
             this.interfaceWindow.style.display = "flex";
             this.interfaceWindowBackdrop.style.display = "initial";
@@ -1341,6 +1441,7 @@ class CanvasCustomizationInterface {
                 this.interfaceWindow.style.top = `${y}px`
                 this.interfaceWindow.classList.add("active")
             }, 0)
+            this.manager.translateInterface.classList.remove("active");
         }
     }
 
