@@ -89,7 +89,7 @@ body{
     scale: 0;
     visibility: hidden;
     transition: 0.2s;
-    transform-origin: bottom left;
+    transform-origin: top left;
 }
 
 *:has(> .canvasElement):hover > .coordCounter{
@@ -203,8 +203,8 @@ body{
 
 .coordCounter{
     position: absolute;
-    bottom: 0;
-    left: 0;
+    top: 0;
+    right: 0;
     z-index: 10000000;
 }
 
