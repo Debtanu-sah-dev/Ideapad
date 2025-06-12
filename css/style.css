@@ -83,6 +83,21 @@ body{
     /* background-image: url(../images/dots.svg); */
     background-position: 0px 0px;
 }
+*:has(> .canvasElement) > .coordCounter{
+    opacity: 0;
+    pointer-events: none;
+    scale: 0;
+    visibility: hidden;
+    transition: 0.2s;
+    transform-origin: bottom left;
+}
+
+*:has(> .canvasElement):hover > .coordCounter{
+    opacity: 1;
+    pointer-events:initial;
+    scale: 1;
+    visibility: visible;
+}
 
 .canvasElement{
     cursor:crosshair;
