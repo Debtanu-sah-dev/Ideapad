@@ -421,13 +421,13 @@ class Applet{
                 }
             }
         })
-        // this.generateApplet();
-        this.appletInfo.html = html_beautify(this.appletInfo.html, beautifyOptions)
-        this.iframe.srcdoc = injectErrorHandlerIntoHTML(this.appletInfo.html, this.id)
-        this.versionControlObject.root = new Version(this.appletInfo.html, "Create Falling Sand Simulation", 0, this.versionControlObject);
-        this.versionControlObject.selectedVersion = this.versionControlObject.root;
-        this.showVersions();
-        console.log(this.versionControlObject);
+        this.generateApplet();
+        // this.appletInfo.html = html_beautify(this.appletInfo.html, beautifyOptions)
+        // this.iframe.srcdoc = injectErrorHandlerIntoHTML(this.appletInfo.html, this.id)
+        // this.versionControlObject.root = new Version(this.appletInfo.html, "Create Falling Sand Simulation", 0, this.versionControlObject);
+        // this.versionControlObject.selectedVersion = this.versionControlObject.root;
+        // this.showVersions();
+        // console.log(this.versionControlObject);
 
         this.iframeError();
     }
