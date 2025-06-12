@@ -118,7 +118,7 @@ export class AI{
         this.responseImage = document.createElement("img");
         this.responseImage.classList.add("responseImg");
         this.responseContainer.appendChild(this.responseImage);
-        this.responseImage.style.width = "25vmin"
+        // this.responseImage.style.width = "25vmin"
 
         this.responseText = document.createElement("div");
         this.responseText.innerText = `Click "Explain" to "Explain" your illustration`;
@@ -130,11 +130,17 @@ export class AI{
         })
         this.openDialog.innerText = "AI";
         this.parent.appendChild(this.openDialog);
+        this.canRespond = true;
         this.createResponseButton = document.createElement("button");
         this.createResponseButton.classList.add("createResponseButton");
-        this.createResponseButton.addEventListener("click", () => {
-            this.run();
-            this.giveMetaPrompt();
+        this.createResponseButton.addEventListener("click", async () => {
+            if(this.canRespond == true){
+                this.createResponseButton.disabled = true;
+                this.canRespond = false;
+                await this.run();
+                this.createResponseButton.disabled = false;
+                this.canRespond = true;
+            }
         })
         this.createResponseButton.innerText = "Explain";
 
@@ -154,11 +160,11 @@ export class AI{
         this.run();
     }
 
-    giveMetaPrompt = async () => {
+    giveMetaPrompt = async (mockupMode = false) => {
         let url = this.manager.getDataUrl();
         this.responseImage.src = url.join(",");
         this.imageDataURL.inlineData.data = url[1];
-        const result = await modelFast.generateContent([structuredClone(this.imageDataURL), metaPrompt]);
+        const result = await modelFast.generateContent([structuredClone(this.imageDataURL), metaPrompt + (mockupMode? "Along with that explain this image in the view of web design as this is a mockup of a webpage/ web-application as well.":"")]);
         // console.log(result.response.text())
         return result.response.text();
     }
@@ -201,33 +207,53 @@ class AppletManager{
         this.add = document.createElement("button");
         this.add.innerText = "+"
         this.addContainer = document.createElement("div");
+        this.addContainerWrapper = document.createElement("div")
+        this.submitWrapper = document.createElement("div")
         this.add.addEventListener("click", () => {
             this.applets.forEach((e) => {
                 e.inactive();
             })
-            this.addContainer.style.display = "initial"
+            this.addContainer.style.display = "flex"
         })
 
         this.labelInput = document.createElement("input");
         this.labelInput.type = "input";
+        this.labelInput.placeholder = "Applet Title"
         this.descriptionTextarea = document.createElement("textarea");
-        this.descriptionTextarea.value = `create a solar system in 3d with all the planets and ring around saturn and moon with earth make all the planet also have their own light source to make them visible and add stars in the background, remove wireframe settings from the planets sphere, make the scene bright with accurate colors and speed`
+        // this.descriptionTextarea.value = `create a solar system in 3d with all the planets and ring around saturn and moon with earth make all the planet also have their own light source to make them visible and add stars in the background, remove wireframe settings from the planets sphere, make the scene bright with accurate colors and speed`
+        this.descriptionTextarea.placeholder = `Describe your applet. Ex. create a solar system in 3d with all the planets and ring around saturn and moon with earth make all the planet also have their own light source to make them visible and add stars in the background, remove wireframe settings from the planets sphere, make the scene bright with accurate colors and speed`
+        this.mockupModeLabel = document.createElement("label");
+        this.mockupModeLabel.innerText = "Mockup Mode for sketch ?"
+        this.mockupModeLabel.setAttribute("for", "mockupModeRadio")
+        this.mockupMode = document.createElement("input");
+        this.mockupMode.type = "checkbox"
+        this.mockupMode.id = "mockupModeRadio"
         this.submitMetaData = document.createElement("button");
         this.submitMetaData.innerText = "Create Applet";
         this.submitMetaData.addEventListener("click", async () => {
-            this.createApplet({
-                label: this.labelInput.value,
-                description: this.descriptionTextarea.value
-            })
-            this.addContainer.style.display = "none";
-            this.applets.forEach((e) => {
-                e.inactive();
-            })
-            this.applets[this.applets.length - 1].active();
+            if(this.labelInput.value.length > 0){
+                this.createApplet({
+                    label: this.labelInput.value,
+                    description: this.descriptionTextarea.value,
+                    mockupMode:this.mockupMode.checked == true ?  true : false
+                })
+                this.addContainer.style.display = "none";
+                this.applets.forEach((e) => {
+                    e.inactive();
+                })
+                this.applets[this.applets.length - 1].active();
+            }
+            else{
+                alert("Enter a name for your applet")
+            }
         })
-        this.addContainer.appendChild(this.labelInput);
-        this.addContainer.appendChild(this.descriptionTextarea);
-        this.addContainer.appendChild(this.submitMetaData)
+        this.addContainerWrapper.appendChild(this.labelInput);
+        this.addContainerWrapper.appendChild(this.descriptionTextarea);
+        this.submitWrapper.appendChild(this.mockupModeLabel);
+        this.submitWrapper.appendChild(this.mockupMode);
+        this.submitWrapper.appendChild(this.submitMetaData);
+        this.addContainerWrapper.appendChild(this.submitWrapper);
+        this.addContainer.appendChild(this.addContainerWrapper);
         this.close = document.createElement("button");
         this.close.innerText = "X"
         this.close.addEventListener("click", () => {
@@ -272,11 +298,13 @@ class AppletManager{
 class Applet{
     constructor({
         label = "Untitled",
-        description = "Use the image for guidance"
+        description = "Use the image for guidance",
+        mockupMode = false
     }, parent){
         this.id = Math.random();
         this.label = label;
-        this.description = description
+        this.description = description;
+        this.mockupMode = mockupMode;
         this.parent = parent;
         this.parent.style.display = "none";
         // this.parent.innerText = "Loading...";
@@ -298,68 +326,129 @@ class Applet{
         this.editSpace.appendChild(this.submitEdit)
         this.editSpace.appendChild(this.solveError);
         this.parent.appendChild(this.editSpace);
-        let code = `<html><head></head><body><script>consolelog(2+2); prin(2+2)</script></body></html>`;
+        this.versionControlOpen = document.createElement("button");
+        this.versionControlOpen.innerText = "Versions";
+        this.versionWindow = document.createElement("dialog");
+        this.versionWindow.classList.add("versionWindow")
+        this.versionWindow.setAttribute("closedby", "any");
+        this.versionClose = document.createElement("button");
+        this.versionClose.innerText = "X"
+        this.versionWindow.appendChild(this.versionClose)
+        this.parent.appendChild(this.versionWindow)
+        this.editSpace.appendChild(this.versionControlOpen);
+        this.versionControlOpen.addEventListener("click", () => {
+            this.versionWindow.showModal();
+        })
+        this.versionClose.addEventListener("click", () => {
+            this.versionWindow.close();
+        })
+        this.versionWindowInterface = document.createElement("div");
+        this.versionWindow.appendChild(this.versionWindowInterface)
+        let code = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Falling Sand Simulation</title><script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.js"></script><style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;background-color:#f0f0f0;font-family:sans-serif;color:#333;}h1{margin-bottom:20px;color:#1a1a1a;font-size:2.5em;text-align:center;}#sand-canvas{border:2px solid #555;border-radius:5px;box-shadow:0 4px 8px rgba(0,0,0,0.2);background-color:#ffffff;}</style></head><body><h1>Falling Sand via Cellular Automata</h1><script>let cellSize=5;let ROWS;let COLS;let grid;function setup(){const canvasWidth=600;const canvasHeight=400;let canvas=createCanvas(canvasWidth,canvasHeight);canvas.id('sand-canvas');COLS=floor(canvasWidth/cellSize);ROWS=floor(canvasHeight/cellSize);grid=create2DArray(COLS,ROWS,0);frameRate(30);}function create2DArray(cols,rows,initialValue){let arr=new Array(rows);for(let i=0;i<rows;i++){arr[i]=new Array(cols).fill(initialValue);}return arr;}function draw(){background(255);for(let y=0;y<ROWS;y++){for(let x=0;x<COLS;x++){if(grid[y][x]===1){fill(255,204,0);noStroke();rect(x*cellSize,y*cellSize,cellSize,cellSize);}}}for(let y=ROWS-2;y>=0;y--){let xOrder=[];for(let i=0;i<COLS;i++){xOrder.push(i);}for(let i=xOrder.length-1;i>0;i--){const j=floor(random(i+1));[xOrder[i],xOrder[j]]=[xOrder[j],xOrder[i]];}for(let i=0;i<xOrder.length;i++){let x=xOrder[i];if(grid[y][x]===1){if(y+1<ROWS&&grid[y+1][x]===0){grid[y+1][x]=1;grid[y][x]=0;}else{let moved=false;let directions=[-1,1];if(random(1)<0.5){directions.reverse();}for(let dir of directions){let diagX=x+dir;let belowY=y+1;if(diagX>=0&&diagX<COLS&&belowY<ROWS&&grid[belowY][diagX]===0){grid[belowY][diagX]=1;grid[y][x]=0;moved=true;break;}}}}}}}function mousePressed(){let mouseGridX=floor(mouseX/cellSize);let mouseGridY=floor(mouseY/cellSize);if(mouseGridX>=0&&mouseGridX<COLS&&mouseGridY>=0&&mouseGridY<ROWS){let spawnRadius=2;for(let dy=-spawnRadius;dy<=spawnRadius;dy++){for(let dx=-spawnRadius;dx<=spawnRadius;dx++){let newX=mouseGridX+dx;let newY=mouseGridY+dy;if(newX>=0&&newX<COLS&&newY>=0&&newY<ROWS){if(grid[newY][newX]===0){grid[newY][newX]=1;}}}}}}</script></body></html>`;
+        this.versionControlObject = {
+            root:{},
+            selectedVersion:null
+        };
         this.appletInfo = {
             html:code
         };
         this.errors = [];
         this.iframe.loading = "lazy";
+        this.canModify = false;
+        this.submitEdit.disabled = true;
         this.submitEdit.addEventListener("click", async () => {
-            if(this.submitEdit.disabled == false){
+            if(this.canModify){
+                this.canModify = false;
                 this.submitEdit.disabled = true;
-                let prompt = `${this.appletInfo.html}\nModify The above html code to include the following modification: ${this.editInput.value}. do the modification by modifying the above code to match the needed modification. do not add comments. change the fundamental working of the html code as per the modification requested. add the given modification without causing errors`
+                let prompt = `${this.appletInfo.html}\nModify The above html code to include the following modification: ${this.editInput.value}. do the modification by modifying the above code to match the needed modification. do not add comments. change the fundamental working of the html code as per the modification requested. add the given modification without causing errors. \n Give the full code do not skip any code, the code you have given should be able to run perfectly verbatim to what you have given. do not give indications like triple dots to make the user assume code is written. Ex. <div>...</div> is wrong, complete it like <div>Hi I am a div</div>. don't leave the code incomplete`
                 try {
                     const rectifiedHTML = await modelRectify.generateContent([prompt]);
-                    // console.log(rectifiedHTML)
-                    // console.log(rectifiedHTML.response)
-                    // console.log(rectifiedHTML.response.text())
+                    // // console.log(rectifiedHTML)
+                    // // console.log(rectifiedHTML.response)
+                    // // console.log(rectifiedHTML.response.text())
                     console.log((JSON.parse(rectifiedHTML.response.text())).html)
-                    this.appletInfo.html = (JSON.parse(rectifiedHTML.response.text())).html
-                    this.iframe.srcdoc = injectErrorHandlerIntoHTML((JSON.parse(rectifiedHTML.response.text())).html)
+                    this.appletInfo.html = html_beautify((JSON.parse(rectifiedHTML.response.text())).html, beautifyOptions)
+                    this.iframe.srcdoc = injectErrorHandlerIntoHTML(this.appletInfo.html, this.id)
+                    let newVersion = new Version(this.appletInfo.html, this.editInput.value, this.versionControlObject.root.getThreadLength(), this.versionControlObject, this)
+                    // console.log(this.versionControlObject.selectedVersion.nextVersion == null);
+                    if(this.versionControlObject.selectedVersion.nextVersion == null){
+                        this.versionControlObject.selectedVersion.addInMain(newVersion);
+                    }
+                    else{
+                        this.versionControlObject.selectedVersion.createFork(newVersion);
+                    }
+                    // console.log(this.versionControlObject);
+                    this.versionControlObject.selectedVersion = newVersion;
+                    this.showVersions();
+                    // console.log(this.versionControlObject);
                 } catch (e) {
                 }
                 this.submitEdit.disabled = false;
+                this.canModify = true;
             }
         });
+        this.canSolve = false;
         this.solveError.addEventListener("click", async () => {
-            if(this.solveError.disabled == false){
-                let errorMessageList = this.errors.map(e => formatError(e)).join("\n");
-                let errorInfos = `${this.appletInfo.html} \n This is the list of errors with the above HTML code fix these error without causing another error or modifying the core framework/integrity of the functioning of the code.if the errors as caused by comments remove them entirely \n ${errorMessageList}`
-                console.log(errorInfos)
-
+            if(this.canSolve){
+                let errorMessageList = this.errors.map(e => formatError(e, this.appletInfo.html)).join("\n");
+                let errorInfos = `${this.appletInfo.html} \n This is the list of errors with the above HTML code fix these error without causing another error or modifying the core framework/integrity of the functioning of the code.if the errors as caused by comments remove them entirely \n ${errorMessageList}. \n Give the full code do not skip any code, the code you have given should be able to run perfectly verbatim to what you have given. do not give indications like triple dots to make the user assume code is written. Ex. <div>...</div> is wrong, complete it like <div>Hi I am a div</div>. don't leave the code incomplete`
+                console.log(errorMessageList)
+                this.canSolve = false;
                 this.solveError.disabled = true;
                 try {
                     const rectifiedHTML = await modelRectify.generateContent([errorInfos]);
-                    // console.log(rectifiedHTML)
-                    // console.log(rectifiedHTML.response)
-                    // console.log(rectifiedHTML.response.text())
+                    // // console.log(rectifiedHTML)
+                    // // console.log(rectifiedHTML.response)
+                    console.log(rectifiedHTML.response.text())
                     console.log((JSON.parse(rectifiedHTML.response.text())).html)
-                    this.appletInfo.html = (JSON.parse(rectifiedHTML.response.text())).html
-                    this.iframe.srcdoc = injectErrorHandlerIntoHTML((JSON.parse(rectifiedHTML.response.text())).html)
+                    this.appletInfo.html = html_beautify((JSON.parse(rectifiedHTML.response.text())).html, beautifyOptions)
+                    this.iframe.srcdoc = injectErrorHandlerIntoHTML(this.appletInfo.html, this.id)
+                    this.errors = [];
+                    let newVersion = new Version(this.appletInfo.html, errorMessageList, this.versionControlObject.root.getThreadLength(), this.versionControlObject, this)
+                    // console.log(this.versionControlObject.selectedVersion.nextVersion == null);
+                    if(this.versionControlObject.selectedVersion.nextVersion == null){
+                        this.versionControlObject.selectedVersion.addInMain(newVersion);
+                    }
+                    else{
+                        this.versionControlObject.selectedVersion.createFork(newVersion);
+                    }
+                    // console.log(this.versionControlObject);
+                    this.versionControlObject.selectedVersion = newVersion;
+                    this.showVersions();
                 } catch (e) {
                     this.solveError.disabled = false;
+                    this.canSolve = true;
                 }
             }
         })
-        this.generateApplet();
-        // this.iframe.src = 'javascript:void(0)';
-        // this.iframe.contentWindow.document.documentElement.innerHTML = `<script>console.log(kkk)</script>`
-        // this.iframe.srcdoc = injectErrorHandlerIntoHTML(code, this.id)
+        // this.generateApplet();
+        this.appletInfo.html = html_beautify(this.appletInfo.html, beautifyOptions)
+        this.iframe.srcdoc = injectErrorHandlerIntoHTML(this.appletInfo.html, this.id)
+        this.versionControlObject.root = new Version(this.appletInfo.html, "Create Falling Sand Simulation", 0, this.versionControlObject);
+        this.versionControlObject.selectedVersion = this.versionControlObject.root;
+        this.showVersions();
+        console.log(this.versionControlObject);
+
         this.iframeError();
-        // this.iframe.srcdoc = `<script>setTimeout(() => {console.log(kkk)}, 2000);</script>`
+    }
+
+    showVersions(){
+        this.versionWindowInterface.innerHTML = "";
+        let mainVersionUI = this.versionControlObject.root.createVersionUI();
+        this.versionWindowInterface.appendChild(mainVersionUI.initialWrapper);
     }
 
     generateApplet = async () => {
-        let metaPrompt = await Ai.giveMetaPrompt();
+        let metaPrompt = await Ai.giveMetaPrompt(this.mockupMode);
         console.log(metaPrompt)
         let url = Ai.manager.getDataUrl();
         Ai.responseImage.src = url.join(",");
         Ai.imageDataURL.inlineData.data = url[1];
-        let recipePrompt = `Create a step by step guide to Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}. Give detailed step by step guide. give the architecture of the functioning of the i.e. the process on which the html code is working, for example:- for creating a to do list you can show the architecture as such:- task class with properties as task_text and status. task manager class which handles status of tasks. also provide structure of UI to be follow and the basic underlying design of the web page. for example:- for a to do list create a section with a text_input and a add button to add tasks. a section below it to search tasks and a section below it which has the list of tasks sorted from latest to oldest. a select option on the other side of the search section to change sorting of the list of tasks such as date created, important, A to Z or Z to A and etc. make the tutorial friendly for a beginner to advanced programmer. add all the minute details. focus on implementation more. if maths or physics is required also explain the mathematics or the physics to solve the problems and sub-problems. Do not write the code your self as this is an exercise to the person reading your tutorial. use code snippets to only enhance implementation process and understanding purposes in javascript. use code snippets only when needed do not give code snippets for css or html. do not tell to create index.html files or give tutorial regarding creating the files or making the web page responsive. do not give additional cdn's for p5 but you can give for other script's and css's cdns used. do not suggest to create any other files or folders because the html code should be independent of the file structure around it because where the code is being used you don't have access to file system, although you can use http links but avoid as much as possible for media and stuff only use for cdns`;
+        let recipePrompt = `Create a step by step guide to Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}. Give detailed step by step guide. give the architecture of the functioning of the i.e. the process on which the html code is working, for example:- for creating a to do list you can show the architecture as such:- task class with properties as task_text and status. task manager class which handles status of tasks. also provide structure of UI to be follow and the basic underlying design of the web page. for example:- for a to do list create a section with a text_input and a add button to add tasks. a section below it to search tasks and a section below it which has the list of tasks sorted from latest to oldest. a select option on the other side of the search section to change sorting of the list of tasks such as date created, important, A to Z or Z to A and etc. make the tutorial friendly for a beginner to advanced programmer. add all the minute details. focus on implementation more. if maths or physics is required also explain the mathematics or the physics to solve the problems and sub-problems. Do not write the code your self as this is an exercise to the person reading your tutorial. use code snippets to only enhance implementation process and understanding purposes in javascript. use code snippets only when needed do not give code snippets for css or html. do not tell to create index.html files or give tutorial regarding creating the files or making the web page responsive. do not give additional cdn's for p5 but you can give for other script's and css's cdns used. do not suggest to create any other files or folders because the html code should be independent of the file structure around it because where the code is being used you don't have access to file system, although you can use http links but avoid as much as possible for media and stuff only use for cdns`;
         let recipe = await model.generateContent([structuredClone(Ai.imageDataURL), recipePrompt]);
         let recipeText = recipe.response.text();
         console.log(recipeText)
-        let fullPrompt = `Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js, use this cdn for p5.js, <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.js"></script>. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}.Give a description and title to the HTML code. the inputs or input fields used should be listed with the appropriate type instead of using default input tags in html or p5 use this tag:- <input id = "{id of the input}" type="{type of the input}"/> and give a label to that input. Please provide a JSON object with the following fields: 'title', 'description', 'html', and 'inputs'. Each input should be an object with 'id', 'label', and 'type' properties. This should be a full body interface not bounded in a container div and *Do not add any comments in the code especially js*. don't add any comments it is a strict warning, format the html code properly with lines and indentations
+        let fullPrompt = `Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js, use this cdn for p5.js, <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.js"></script>. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}.Give a description and title to the HTML code. the inputs or input fields used should be listed with the appropriate type instead of using default input tags in html or p5 use this tag:- <input id = "{id of the input}" type="{type of the input}"/> and give a label to that input. Please provide a JSON object with the following fields: 'title', 'description', 'html', and 'inputs'. Each input should be an object with 'id', 'label', and 'type' properties. This should be a full body interface not bounded in a container div and *Do not add any comments in the code especially js*. don't add any comments it is a strict warning, format the html code properly with lines and indentations
 ${rectificationPrompt}
 
 Follow the following tutorial/step-by-step guide to build the HTML code:-
@@ -375,9 +464,15 @@ ${recipeText}`;
         // const rectifiedHTML = await modelRectify.generateContent([`${JSON.parse(result.response.text()).html}${rectificationPrompt}`])
 
         this.appletInfo = JSON.parse(result.response.text())
+        this.appletInfo.html = html_beautify(this.appletInfo.html, beautifyOptions);
         // this.appletInfo.html = JSON.parse(result.response.text()).html;
-        this.iframe.srcdoc = injectErrorHandlerIntoHTML(JSON.parse(result.response.text()).html, this.id);
-        console.log(JSON.parse(result.response.text()).html)
+        this.iframe.srcdoc = injectErrorHandlerIntoHTML(this.appletInfo.html, this.id);
+        this.versionControlObject.root = new Version(this.appletInfo.html, this.description, 0, this.versionControlObject, this);
+        this.versionControlObject.selectedVersion = this.versionControlObject.root;
+        this.showVersions();
+        this.submitEdit.disabled = false;
+        this.canModify = true;
+        console.log(this.appletInfo.html)
     }
 
     iframeError(){
@@ -385,6 +480,7 @@ ${recipeText}`;
             if (event.data.type !== 'iframe-error'){return;}
             if (event.data.id !== this.id){return;}
             console.error('Iframe error:', event.data);
+            this.canSolve = true;
             this.solveError.disabled = false;
             this.errors.push(event.data)
         });
@@ -410,6 +506,97 @@ ${recipeText}`;
 
     inactive(){
         this.parent.style.display = "none"
+    }
+}
+
+class Version{
+    constructor(data, prompt, version, versionControlObject, applet){
+        this.html = data;
+        this.prompt = prompt;
+        this.versionPrefix = "";
+        this.version = version;
+        this.nextVersion = null;
+        this.versionControlObject = versionControlObject;
+        this.childrenMain = [];
+        this.forks = [];
+        this.applet = applet;
+        this.id = Math.random();
+    }
+
+    createVersionUI(){
+        let initialWrapper = document.createElement("div");
+        let currentVersionWrapper = document.createElement("div");
+        let currentVersionButton = document.createElement("button");
+        currentVersionButton.innerText = `Version ${this.versionPrefix}${this.version}`;
+        let forks = document.createElement("div");
+        currentVersionWrapper.appendChild(currentVersionButton)
+        initialWrapper.appendChild(currentVersionWrapper)
+        initialWrapper.appendChild(forks);
+        initialWrapper.classList.add("initialWrapper");
+        currentVersionWrapper.classList.add("currentVersionWrapper");
+        currentVersionButton.classList.add("currentVersionButton");
+        forks.classList.add("forks");
+
+        currentVersionButton.addEventListener("click", () => {
+            this.versionControlObject.selectedVersion = this;
+            this.applet.iframe.srcdoc = this.html;
+            this.applet.appletInfo.html = this.html;
+            console.log(this.versionControlObject);
+        })
+        
+        if(this.nextVersion != null){
+            let nextVersionUI = this.nextVersion.createVersionUI();
+            currentVersionWrapper.appendChild(nextVersionUI.initialWrapper)
+        }
+
+        this.forks.forEach((e) => {
+            let forkVersionUI = e.createVersionUI();
+            forks.appendChild(forkVersionUI.initialWrapper);
+        })
+
+        return {initialWrapper, currentVersionWrapper, currentVersionButton, forks}
+    }
+
+    addInMain(version){
+        this.childrenMain.push(version);
+        if(this.nextVersion == null){
+            this.nextVersion = version;
+            version.versionPrefix = this.versionPrefix;
+            version.version = this.version + 1;
+            return;
+        }
+        else{
+            this.nextVersion.addInMain(version);
+        }
+    }
+
+    createFork(version){
+        version.versionPrefix = `${this.versionPrefix}${this.versionPrefix == "" ? "" : "."}${this.version}.`
+        version.version = 1;
+        this.forks.push(version);
+    }
+
+    getThreadLength(){
+        if(this.nextVersion == null){
+            return 1;
+        }
+        else{
+            return 1 + this.nextVersion.getThreadLength();
+        }
+    }
+
+    isChildOf(version){
+        for (let child of version.children) {
+            if(child.id == this.id){
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    isLastChildOf(version){
+        let isChild = this.isChildOf(version);
+        return isChild && (this.nextVersion == null);
     }
 }
 
@@ -442,8 +629,10 @@ function injectErrorHandlerIntoHTML(htmlContent, id) {
   }
 }
 
-function formatError(e){
-    return `${e.message}:- at line number(${e.lineno}) and column number(${e.colno}) that is ${e.error.replace(/\n/g, " ")}))`
+function formatError(e, appletInfoHTML){
+    let lines = appletInfoHTML.split("\n");
+    let linesAround = `${lines[e.lineno - 11]}\n${lines[e.lineno - 10]}\n${lines[e.lineno - 9]}`
+    return `${e.message}:- at line number(${e.lineno}) and column number(${e.colno}) that is ${e.error.replace(/\n/g, " ")})).\nIt occurred in the block of code below:-\n${linesAround}`
 }
 
 const ai = document.querySelector("#ai");

@@ -33,14 +33,14 @@ class CanvasManager {
         };
         this.translation = new Point(0, 0);
         this.strokeProperties = {
-            color: "#000000",
+            color: getComputedStyle(document.documentElement).getPropertyValue('--penColor'),
             thickness: 5,
             join: "round",
             cap: "round",
             translation: this.translation
         }
         this.shapeProperties = {
-            strokeColor:"#000000",
+            strokeColor:getComputedStyle(document.documentElement).getPropertyValue('--penColor'),
             fillColor:false,
             thickness: 5,
             join: "round",
@@ -111,6 +111,17 @@ class CanvasManager {
             this.prevTranslation = this.translation.copy();
         }
     }
+    mouseDownWithoutMove(e, point, forceDraw = false){
+        let x = (point ? point.x : e.x) - this.parent.offsetLeft;
+        let y = (point ? point.y : e.y) - this.parent.offsetTop;
+        if((e.button == 0) || forceDraw){
+            this.penDown = true;
+            this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
+            let stroke = this.strokes.at(-1)
+            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
+            stroke.drawStroke();
+        }
+    }
 
     contextMenu(e){
         e.preventDefault();
@@ -171,9 +182,24 @@ class CanvasManager {
             this.move.y = y - this.translationBegin.y;
             this.translation.x = this.prevTranslation.x + this.move.x
             this.translation.y = this.prevTranslation.y + this.move.y
-            this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+            // this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+            document.body.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
             this.render();
         }
+        this.currentMouseCoord.x = Math.round(e.x - this.parent.offsetLeft - this.translation.x);
+        this.currentMouseCoord.y = Math.round(e.y - this.parent.offsetTop - this.translation.y);
+
+        this.coordCounter.innerText = `${this.currentMouseCoord.x}, ${ this.currentMouseCoord.y}`
+    }
+    mouseMoveWithoutMove(e, point){
+        let x = (point ? point.x : e.x) - this.parent.offsetLeft;
+        let y = (point ? point.y : e.y) - this.parent.offsetTop;
+        if (this.penDown) {
+            let stroke = this.strokes.at(-1)
+            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
+            stroke.drawStroke();
+        }
+        e.preventDefault();
         this.currentMouseCoord.x = Math.round(e.x - this.parent.offsetLeft - this.translation.x);
         this.currentMouseCoord.y = Math.round(e.y - this.parent.offsetTop - this.translation.y);
 
@@ -221,7 +247,8 @@ class CanvasManager {
                 this.move.y = y - this.translationBegin.y;
                 this.translation.x = this.prevTranslation.x + this.move.x
                 this.translation.y = this.prevTranslation.y + this.move.y
-                this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+                // this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+                document.body.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
                 this.render();
             }
         })
@@ -238,7 +265,7 @@ class CanvasManager {
         proxyCanvas.width = this.canvasElement.width;
         proxyCanvas.height = this.canvasElement.height;
         let ctx = proxyCanvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-solid');
         ctx.rect(0, 0, proxyCanvas.width, proxyCanvas.height)
         ctx.fill();
         this.render(ctx, false);
@@ -256,6 +283,24 @@ class CanvasManager {
         ctx.putImageData(imageData, 0, 0);
         let url = proxyCanvas.toDataURL().split(",");
         return url
+    }
+
+    undoAble(){
+        if(this.strokes.length !== 0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    redoAble(){
+        if(this.redoQueue.length !== 0){
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 }
 
@@ -596,9 +641,9 @@ class ConstraintDriver{
             let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
             let x = contrain.x + this.manager.parent.offsetLeft;
             let y = contrain.y + this.manager.parent.offsetTop;
-            let isForceDraw = (this.currentConstraint == 2) && this.constraints[this.currentConstraint].penCanRotate;
+            let isForceDraw = (this.currentConstraint == 2) && (e.button == 2);
             this.wasRotatable = isForceDraw;
-            this.manager.mouseDown(e, new Point(x, y), isForceDraw);
+            this.manager.mouseDownWithoutMove(e, new Point(x, y), isForceDraw);
             // this.manager.mouseDown(e);
         })
         this.constraintWindow.addEventListener("mouseup", (e) => {
@@ -619,9 +664,10 @@ class ConstraintDriver{
         })
         this.constraintWindow.addEventListener("mousemove", (e) => {
             let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
-            let x = contrain.x + this.manager.parent.offsetLeft
-            let y = contrain.y + this.manager.parent.offsetTop
+            let x = contrain.x + this.manager.parent.offsetLeft;
+            let y = contrain.y + this.manager.parent.offsetTop;
             this.manager.mouseMove(e, new Point(x, y));
+            this.manager.mouseMoveWithoutMove(e, new Point(x, y));
             // this.manager.mouseMove(e);
         })
 
@@ -936,12 +982,12 @@ class CompassConstraint extends Constraint{
         this.penCanMove = false;
         this.penCanRotate = false;
         this.penController.addEventListener("mousedown",(e) => {
-            if((e.button == 0) || (e.button == 2)){
+            if((e.button == 0) || (e.button == 1)){
                 e.stopPropagation();
             }
             this.penCanMove = true;
             this.penCanRotate = false;
-            if(e.button == 1){
+            if(e.button == 2){
                 let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
                 let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
                 let pointX = this.shape.offsetLeft + this.penEnd.offsetLeft;
@@ -1188,6 +1234,7 @@ class CanvasCustomizationInterface {
         this.interfaceWindowBackdrop.classList.add("interfaceBackdrop");
         this.colorPicker1 = document.createElement("input");
         this.colorPicker1.type = "color";
+        this.colorPicker1.value = getComputedStyle(document.documentElement).getPropertyValue('--penColor');
         this.colorPicker2 = document.createElement("input");
         this.colorPicker2.type = "color";
         this.colorPicker2.value = "#ffffff"
@@ -1245,14 +1292,14 @@ class CanvasCustomizationInterface {
 
         //Fill Type Selector
         this.fillTypeSelector = document.createElement("button");
-        this.fillTypeSelector.innerText = "Stroke & Fill";
+        this.fillTypeSelector.innerText = "Stroke";
         this.interfaceWindow.appendChild(this.fillTypeSelector);
 
         this.pan = document.createElement("button");
         this.pan.innerText = "Pan";
         this.interfaceWindow.appendChild(this.pan);
 
-        this.fillTypeArray = ["Stroke & Fill", "Stroke", "Fill"];
+        this.fillTypeArray = ["Stroke", "Fill", "Stroke & Fill"];
         this.fillType = 0;
 
         this.thicknessSlider = document.createElement("input");
@@ -1268,7 +1315,10 @@ class CanvasCustomizationInterface {
             if(!this.manager.translateInterface.classList.contains("active")){
                 this.manager.translateInterface.classList.add("active");
                 if(this.touchscreenInterface){
+                    this.touchscreenInterface.innerHTML = "";
                     this.touchscreenInterface.innerText = "Stop Panning"
+                    this.pan.querySelector("span").innerText = "do_not_touch"
+                    iconify(this.touchscreenInterface)
                 }
                 this.inactive();
             }
@@ -1311,7 +1361,7 @@ class CanvasCustomizationInterface {
             latestFreeShape = shape;
             this.manager.strokes.push(shape);
             if(this.touchscreenInterface){
-                this.touchscreenInterface.innerText = "End FreeShape"
+                this.touchscreenInterface.querySelector("span").innerText = "edit_off"
             }
         })
         this.circleShape.addEventListener("click", () => {
@@ -1342,7 +1392,11 @@ class CanvasCustomizationInterface {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.colorPicker1.value = "#ffffff"
+            this.colorPicker1.value = getComputedStyle(document.documentElement).getPropertyValue('--eraserColor')
+            if(this.shapeProperties.strokeColor != false){
+                this.shapeProperties.strokeColor = this.colorPicker1.value;
+            }
+            this.strokeProperties.color = this.colorPicker1.value;
         })
         this.clear.addEventListener("click", () => {
             this.manager.strokes = listenableArray();
@@ -1353,11 +1407,13 @@ class CanvasCustomizationInterface {
         })
 
         this.undo.addEventListener("click", () => {
-            this.manager.redoQueue.push(this.manager.strokes.pop());
+            if(this.manager.undoAble()){
+                this.manager.redoQueue.push(this.manager.strokes.pop());
+            }
             this.manager.render();
         })
         this.redo.addEventListener("click", () => {
-            if(this.manager.redoQueue.length > 0){
+            if(this.manager.redoAble()){
                 this.manager.strokes.pushNC(this.manager.redoQueue.pop());
                 this.manager.render();
             }
@@ -1366,15 +1422,15 @@ class CanvasCustomizationInterface {
             this.fillType = (this.fillType + 1) % 3;
             this.fillTypeSelector.innerText = this.fillTypeArray[this.fillType];
             switch (this.fillType) {
-                case 0:
+                case 2:
                     this.shapeProperties.strokeColor = this.colorPicker1.value;
                     this.shapeProperties.fillColor = this.colorPicker2.value;
                     break;
-                case 1:
+                case 0:
                     this.shapeProperties.strokeColor = this.colorPicker1.value;
                     this.shapeProperties.fillColor = false;
                     break;
-                case 2:
+                case 1:
                     this.shapeProperties.strokeColor = false;
                     this.shapeProperties.fillColor = this.colorPicker2.value;
                     break;
@@ -1430,6 +1486,8 @@ class CanvasCustomizationInterface {
         if(!this.activeStatus){
             if(this.touchscreenInterface){
                 this.touchscreenInterface.innerText = "Tools"
+                iconify(this.touchscreenInterface);
+                this.pan.querySelector("span").innerText = "pan_tool"
             }
             this.activeStatus = true
             this.interfaceWindow.style.display = "flex";

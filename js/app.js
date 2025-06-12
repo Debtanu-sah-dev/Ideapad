@@ -92,12 +92,14 @@ marked.use(markedKatex(options));
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
       mutation.addedNodes.forEach(node => {
+        iconify(node);
         if (node instanceof HTMLElement) {
           node.enableTouchToMouseMapping();
         }
         // Also handle their children
         if (node.querySelectorAll) {
           node.querySelectorAll('*').forEach(child => {
+            iconify(child);
             if (child instanceof HTMLElement) {
               child.enableTouchToMouseMapping();
             }
@@ -115,3 +117,52 @@ marked.use(markedKatex(options));
 })();
 
 //*Ai Code End
+
+let textToIconMap = {
+  "triangle": "change_history",
+  "free shape": "polyline",
+  "circle": "circle",
+  "line":"diagonal_line",
+  "square":"square",
+  "rectangle":"rectangle",
+  "eraser":"ink_eraser",
+  "clear":"delete_forever",
+  "undo":"undo",
+  "redo":"redo",
+  "pan":"pan_tool",
+  "scale":"straighten",
+  "compass": "architecture",
+  "protractor":"looks",
+  "x":"close",
+  "+":"add",
+  "explain":"prompt_suggestion",
+  "ai": "text_fields_alt",
+  "tools":"design_services",
+  "applet": "view_cozy",
+  "create applet": "add",
+  "versions":"fork_left",
+  "solve issue":"bug_report",
+  "modify applet":"edit_square",
+  "stop panning":"do_not_touch",
+  "end freeshape":"edit_off"
+}
+
+
+function iconify(element){
+  console.log(element.innerText);
+  if (element.tagName == "BUTTON") {
+    if(textToIconMap[element.innerText.toLowerCase()] != null){
+      let text = element.innerText.toLowerCase();
+      let icon = document.createElement("span");
+      icon.classList.add("material-symbols-outlined")
+      icon.innerText = textToIconMap[text];
+      element.innerHTML = "";
+      element.dataset.type = text;
+      element.appendChild(icon)
+    }
+  }
+}
+
+document.querySelectorAll("button").forEach((e) => {
+  iconify(e);
+})

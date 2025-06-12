@@ -7,20 +7,43 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/plugins/toolbar/prism-toolbar.css" integrity="sha512-/wmVssmXm7BdNJ88p0FAFcke6Pybw5NcXXaWvGuJRvpBDJzHK1rT2a2vsXRV2aK3Ul3erPBfyBZDNRCFy7ej7Q==" crossorigin="anonymous" referrerpolicy="no-referrer" /><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/themes/prism-okaidia.min.css" integrity="sha512-5HvW0a7ihK3ro2KhwEksDHXgIezsTeZybZDIn8d8Y015Ny+t7QWSIjnlCTjFzlK7Klb604HLGjsNqU/i5mJLjQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" integrity="sha384-GvrOXuhMATgEsSwCs4smul74iXGOixntILdUW9XmUC6+HX0sLNAK3q71HotJqlAn" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   </head>
   <body>
     <div id="canvas"></div>
     <div id="ai"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.3/beautify.min.js" integrity="sha512-4rLpMC5mO8uHkCL7X0q8P3GQlRTbch5/vp1E6+iwi6nFQc50TGqtM4GRo2cjUpQ8/w9X3+2nVDPNHPOAdOz+Dw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.3/beautify-css.min.js" integrity="sha512-GS3bO88bff1ieJ8ZKeWhjlK5Y6Mwvu4WmQ8gdIgbeSyp7iBaqSVxCUGgOV9RjiiQgoci/HW9n7IVn3o670AY8w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.3/beautify-html.min.js" integrity="sha512-ZIu+FgQxrG6A7u+BQMNz0g+pTJGAqB+oumn2rZegvyPYJG4aegC6srYdRvksOaDfqOMM1/vuUJZWMIiMNJw2mw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+      var beautifyOptions = {
+        "indent_size": "4",
+        "indent_char": " ",
+        "max_preserve_newlines": "5",
+        "preserve_newlines": true,
+        "keep_array_indentation": false,
+        "break_chained_methods": false,
+        "indent_scripts": "normal",
+        "brace_style": "collapse",
+        "space_before_conditional": true,
+        "unescape_strings": false,
+        "jslint_happy": false,
+        "end_with_newline": false,
+        "wrap_line_length": "0",
+        "indent_inner_html": false,
+        "comma_first": false,
+        "e4x": false,
+        "indent_empty_lines": false
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="
-https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js
-"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.4/lib/index.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/prism.min.js" integrity="sha512-/Swpp6aCQ0smuZ+zpklJqMClcUlvxhpLf9aAcM7JjJrj2waCU4dikm3biOtMVAflOOeniW9qzaNXNrbOAOWFCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/plugins/toolbar/prism-toolbar.js" integrity="sha512-PuFxiWjCji4u4rLUJv5sY1E2wilxRDd5mmvvNjIUxcJhndJ1bt8ZLZfLzNTflIwgRtr6446ClMR22epU2YK6Mw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" integrity="sha512-pUNGXbOrc+Y3dm5z2ZN7JYQ/2Tq0jppMDOUsN4sQHVJ9AUQpaeERCUfYYBAnaRB9r8d4gtPKMWICNhm3tRr4Fg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked-katex-extension@5.1.4/lib/index.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/prism.min.js" integrity="sha512-/Swpp6aCQ0smuZ+zpklJqMClcUlvxhpLf9aAcM7JjJrj2waCU4dikm3biOtMVAflOOeniW9qzaNXNrbOAOWFCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/plugins/toolbar/prism-toolbar.js" integrity="sha512-PuFxiWjCji4u4rLUJv5sY1E2wilxRDd5mmvvNjIUxcJhndJ1bt8ZLZfLzNTflIwgRtr6446ClMR22epU2YK6Mw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" integrity="sha512-pUNGXbOrc+Y3dm5z2ZN7JYQ/2Tq0jppMDOUsN4sQHVJ9AUQpaeERCUfYYBAnaRB9r8d4gtPKMWICNhm3tRr4Fg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="importmap">
         {
             "imports": {
