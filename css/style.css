@@ -89,7 +89,7 @@ body{
     scale: 0;
     visibility: hidden;
     transition: 0.2s;
-    transform-origin: top left;
+    transform-origin: top right;
 }
 
 *:has(> .canvasElement):hover > .coordCounter{
