@@ -149,7 +149,6 @@ let textToIconMap = {
 
 
 function iconify(element){
-  console.log(element.innerText);
   if (element.tagName == "BUTTON") {
     if(textToIconMap[element.innerText.toLowerCase()] != null){
       let text = element.innerText.toLowerCase();

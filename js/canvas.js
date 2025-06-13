@@ -69,9 +69,9 @@ class CanvasManager {
         this.penDown = false;
         this.shapeMode = false;
         this.fitCanvasElement();
-        if(!isTouchscreen()){
+        // if(!isTouchscreen()){
             this.constraintWindow = new ConstraintDriver(this);
-        }
+        // }
         this.canvasCustomizationInterface = new CanvasCustomizationInterface(this);
     }
 
@@ -641,10 +641,21 @@ class ConstraintDriver{
             let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
             let x = contrain.x + this.manager.parent.offsetLeft;
             let y = contrain.y + this.manager.parent.offsetTop;
-            let isForceDraw = (this.currentConstraint == 2) && (e.button == 2);
+            let isForceDraw = (this.currentConstraint == 2) && this.constraints[this.currentConstraint].penCanRotate;
+            if ((this.currentConstraint == 0) && (this.constraints[this.currentConstraint].lastMouseDownInShape == true)) {
+                return;
+            }
+            if ((this.currentConstraint == 1) && (this.constraints[this.currentConstraint].lastMouseDownInShape == true)) {
+                return;
+            }
+            if((this.currentConstraint == 2) && (this.constraints[this.currentConstraint].pinCanMove || this.constraints[this.currentConstraint].penCanMove)){
+                return;
+            }
+            if((this.currentConstraint == 2) && (this.constraints[this.currentConstraint].notchCanMove)){
+                return;
+            }
             this.wasRotatable = isForceDraw;
-            this.manager.mouseDownWithoutMove(e, new Point(x, y), isForceDraw);
-            // this.manager.mouseDown(e);
+            this.manager.mouseDown(e, new Point(x, y), isForceDraw);
         })
         this.constraintWindow.addEventListener("mouseup", (e) => {
             let contrain = this.constraints[this.currentConstraint].constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
@@ -667,7 +678,7 @@ class ConstraintDriver{
             let x = contrain.x + this.manager.parent.offsetLeft;
             let y = contrain.y + this.manager.parent.offsetTop;
             this.manager.mouseMove(e, new Point(x, y));
-            this.manager.mouseMoveWithoutMove(e, new Point(x, y));
+            // this.manager.mouseMove(e, new Point(x, y));
             // this.manager.mouseMove(e);
         })
 
@@ -734,19 +745,29 @@ class ScaleConstraint extends Constraint{
         this.rt = new Point();
         this.theta = 0;
         this.slope = 0.00001;
-        this.panControl.addEventListener("mousemove", (e) => {
-            this.panZone = true;
-        })
-        this.panControl.addEventListener("mouseleave", (e) => {
-            this.panZone = false;
-        })
+        this.canConstrain = false;
+        this.lastMouseDownInShape = false;
+        // this.panControl.addEventListener("mousemove", (e) => {
+        //     this.panZone = true;
+        // })
+        // this.panControl.addEventListener("mouseleave", (e) => {
+        //     this.panZone = false;
+        // })
         this.shape.addEventListener("mousemove", (e) => {
             // e.stopPropagation();
             // let contrain = this.constrain(new Point(e.x - this.manager.parent.offsetLeft, e.y - this.manager.parent.offsetTop));
             // let x = contrain.x + this.manager.parent.offsetLeft
             // let y = contrain.y + this.manager.parent.offsetTop
             // this.manager.mouseMove(e, new Point(x, y))
-            if(this.panZone && !this.rotating){
+            if(this.lastMouseDownInShape){
+                this.canConstrain = false;
+                // e.stopPropagation();
+            }
+            if(!this.lastMouseDownInShape){
+                this.canConstrain = true;
+                // e.stopPropagation();
+            }
+            if(document.elementFromPoint(e.x, e.y).classList.contains("scalePanControl") && !this.rotating){
                 this.canPan = true;
                 this.canRotate = false;
             }
@@ -767,15 +788,56 @@ class ScaleConstraint extends Constraint{
                 this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
             }
             this.inShape = false;
+            // if(this.canConstrain == true){
+            //     this.canConstrain = false;
+            // }
         })
         this.shape.addEventListener("mousedown", (e) => {
             e.stopPropagation();
             this.mouseDownCoord.x = e.x - this.shape.offsetLeft;
             this.mouseDownCoord.y = e.y - this.shape.offsetTop;
             this.canMove = true;
+            if(!isTouchscreen()){
+                this.lastMouseDownInShape = true;
+            }
+        })
+        this.driver.constraintWindow.addEventListener("touchstart", (event) => {
+        // event.target is the element where the touch started
+            if (event.target.parentElement.classList.contains("scale") || event.target.classList.contains("scale")) {
+                this.lastMouseDownInShape = true;
+            } else {
+                this.lastMouseDownInShape = false;
+            }
+
+            // console.log("Last touch inside div?", this.lastMouseDownInShape, event.target);
+        });
+        this.driver.constraintWindow.addEventListener("mousedown", (e) => {
+            // e.stopPropagation();
+            // if(this.mouseDownInShape == true){
+                // this.canConstrain = false;
+            // }
+            if(!isTouchscreen()){
+                this.lastMouseDownInShape = false;
+            }
+            this.canConstrain = false;
         })
         this.driver.constraintWindow.addEventListener("mousemove", (e) => {
             e.stopPropagation();
+            // console.log("initiated incall")
+            let element = document.elementFromPoint(e.x, e.y)
+            if(element.parentElement.classList.contains("scale") || element.classList.contains("scale")){
+                if(this.lastMouseDownInShape){
+                    this.canConstrain = false;
+                    // e.stopPropagation();
+                }
+                if(!this.lastMouseDownInShape){
+                    this.canConstrain = true;
+                    // e.stopPropagation();
+                }
+                if(isTouchscreen()){
+                    this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
+                }
+            }
             let centerX = this.shape.offsetLeft + this.shape.offsetWidth/2;
             let centerY = this.shape.offsetTop + this.shape.offsetHeight/2;
             if(this.canMove && this.canPan){
@@ -807,7 +869,10 @@ class ScaleConstraint extends Constraint{
     }
 
     constrain(point){
-        if(this.inShape){
+        // console.log("hi", this.lastMouseDownInShape)
+        // console.log("now hi", this.canConstrain)
+        if(this.canConstrain){
+            console.log("is constraining")
             let numerator = (point.x/this.slope) + (this.slope * this.rt.x) + point.y - this.rt.y;
             let denominator = this.slope + (1/this.slope);
             let x = numerator/denominator;
@@ -834,11 +899,21 @@ class ProtractorConstraint extends Constraint{
         this.radius = (this.shape.offsetWidth)/2;
         this.centerX = this.radius;
         this.centerY = this.radius;
+        this.canConstrain = false;
+        this.lastMouseDownInShape = false;
         this.shape.addEventListener("mousemove", (e) => {
             // if(!this.inShape && this.manager.penDown){
             //     // this.manager.mouseUp(e);
             //     this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
             // }
+            if(this.lastMouseDownInShape){
+                this.canConstrain = false;
+                // e.stopPropagation();
+            }
+            if(!this.lastMouseDownInShape){
+                this.canConstrain = true;
+                // e.stopPropagation();
+            }
             this.inShape = true;
         })
 
@@ -850,10 +925,47 @@ class ProtractorConstraint extends Constraint{
             this.mouseDownCoord.x = e.x - this.shape.offsetLeft;
             this.mouseDownCoord.y = e.y - this.shape.offsetTop;
             this.canMove = true;
+            if(!isTouchscreen()){
+                this.lastMouseDownInShape = true;
+            }
+        })
+        this.driver.constraintWindow.addEventListener("touchstart", (event) => {
+        // event.target is the element where the touch started
+            if (event.target.parentElement.classList.contains("protractor") || event.target.classList.contains("protractor")) {
+                this.lastMouseDownInShape = true;
+            } else {
+                this.lastMouseDownInShape = false;
+            }
+
+            // console.log("Last touch inside div?", this.lastMouseDownInShape, event.target);
+        });
+        this.driver.constraintWindow.addEventListener("mousedown", (e) => {
+            // e.stopPropagation();
+            // if(this.mouseDownInShape == true){
+                // this.canConstrain = false;
+            // }
+            if(!isTouchscreen()){
+                this.lastMouseDownInShape = false;
+            }
+            this.canConstrain = false;
         })
 
         this.driver.constraintWindow.addEventListener("mousemove", (e) => {
             e.stopPropagation();
+            let element = document.elementFromPoint(e.x, e.y)
+            if(element.parentElement.classList.contains("protractor") || element.classList.contains("protractor")){
+                if(this.lastMouseDownInShape){
+                    this.canConstrain = false;
+                    // e.stopPropagation();
+                }
+                if(!this.lastMouseDownInShape){
+                    this.canConstrain = true;
+                    // e.stopPropagation();
+                }
+                // if(isTouchscreen()){
+                //     this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
+                // }
+            }
             if(this.canMove){
                 this.shape.style.left = e.x - this.manager.parent.offsetLeft - this.mouseDownCoord.x  + "px";
                 this.shape.style.top = e.y - this.manager.parent.offsetTop - this.mouseDownCoord.y + "px";
@@ -874,12 +986,12 @@ class ProtractorConstraint extends Constraint{
     }
 
     constrain(point){
-        if(!this.inShape){
-            return point.copy();
-        }
-        else{
+        if(this.canConstrain){
             const theta = Math.atan2((point.y - this.centerY) , (point.x - this.centerX));
             return new Point(this.radius*Math.cos(theta) + this.centerX, this.radius*Math.sin(theta) + this.centerY);
+        }
+        else{
+            return point.copy();
         }
     }
 }
@@ -980,21 +1092,37 @@ class CompassConstraint extends Constraint{
             this.pinCanMove = false;
         })
         this.penCanMove = false;
+        this.rotateState = false;
         this.penCanRotate = false;
+        let time = (new Date()).getTime();
+        this.notch.addEventListener("mousedown", (e) => {
+            if(((new Date()).getTime() - time) < 500){
+                e.preventDefault();
+                this.rotateState = !this.rotateState;
+                this.penCanRotate = false;
+            }
+            time = (new Date()).getTime();
+        })
         this.penController.addEventListener("mousedown",(e) => {
-            if((e.button == 0) || (e.button == 1)){
+            if((e.button == 2) || (e.button == 1)){
+                e.stopPropagation();
+            }
+            if((e.button == 0) && (!this.rotateState)){
                 e.stopPropagation();
             }
             this.penCanMove = true;
-            this.penCanRotate = false;
-            if(e.button == 2){
+            if(this.rotateState == true){
+                this.penCanRotate = true;
+            }
+            // this.penCanRotate = false;
+            if(this.rotateState){
                 let tempX = this.shape.offsetLeft + this.pinEnd.offsetLeft;
                 let tempY = this.shape.offsetTop + this.pinEnd.offsetTop;
                 let pointX = this.shape.offsetLeft + this.penEnd.offsetLeft;
                 let pointY = this.shape.offsetTop + this.penEnd.offsetTop;
                 let distance = dist(tempX, tempY, pointX, pointY);
                 this.distance = distance;
-                this.penCanRotate = true;
+                // this.penCanRotate = true;
                 this.penCanMove = false;
             }
         })
@@ -1023,6 +1151,10 @@ class CompassConstraint extends Constraint{
         this.driver.constraintWindow.addEventListener("mouseleave", () => {
             // e.stopPropagation();
             this.penCanMove = false;
+        })
+        window.addEventListener("mouseleave", () => {
+            // e.stopPropagation();
+            this.penCanRotate = false;
         })
         this.driver.constraintWindow.addEventListener("mousemove", (e) => {
             if(this.penCanRotate){
@@ -1440,7 +1572,7 @@ class CanvasCustomizationInterface {
             }
         })
 
-        if(!isTouchscreen()){
+        // if(!isTouchscreen()){
             for(let toolIndex in this.manager.constraintWindow.constraints){
                 toolIndex = parseInt(toolIndex);
                 let tool = this.manager.constraintWindow.constraints[toolIndex];
@@ -1463,7 +1595,7 @@ class CanvasCustomizationInterface {
                     }
                 })
             }
-        }
+        // }
         this.touchscreenInterface = document.createElement("button")
         this.touchscreenInterface.innerText = "Tools"
         document.querySelector("#ai").appendChild(this.touchscreenInterface)
