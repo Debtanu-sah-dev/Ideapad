@@ -1096,7 +1096,7 @@ class CompassConstraint extends Constraint{
         this.penCanRotate = false;
         let time = (new Date()).getTime();
         this.notch.innerHTML = "<span class='material-symbols-outlined'>drag_pan</span>"
-        this.penEnd.addEventListener("mousedown", (e) => {
+        this.notch.addEventListener("mousedown", (e) => {
             if(((new Date()).getTime() - time) < 250){
                 e.preventDefault();
                 this.rotateState = !this.rotateState;
