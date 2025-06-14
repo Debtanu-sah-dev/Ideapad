@@ -144,12 +144,14 @@ let textToIconMap = {
   "solve issue":"bug_report",
   "modify applet":"edit_square",
   "stop panning":"do_not_touch",
-  "end freeshape":"edit_off"
+  "end freeshape":"edit_off",
+  "ink":"replay",
+  "move": "drag_pan"
 }
 
 
-function iconify(element){
-  if (element.tagName == "BUTTON") {
+function iconify(element, forced = false){
+  if ((element.tagName == "BUTTON") || forced) {
     if(textToIconMap[element.innerText.toLowerCase()] != null){
       let text = element.innerText.toLowerCase();
       let icon = document.createElement("span");

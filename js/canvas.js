@@ -1095,11 +1095,19 @@ class CompassConstraint extends Constraint{
         this.rotateState = false;
         this.penCanRotate = false;
         let time = (new Date()).getTime();
-        this.notch.addEventListener("mousedown", (e) => {
-            if(((new Date()).getTime() - time) < 500){
+        this.notch.innerHTML = "<span class='material-symbols-outlined'>drag_pan</span>"
+        this.penEnd.addEventListener("mousedown", (e) => {
+            if(((new Date()).getTime() - time) < 250){
                 e.preventDefault();
                 this.rotateState = !this.rotateState;
                 this.penCanRotate = false;
+                if(this.rotateState == true){
+                    this.notch.innerText = "Ink"
+                }
+                else{
+                    this.notch.innerText = "Move"
+                }
+                iconify(this.notch, true);
             }
             time = (new Date()).getTime();
         })
@@ -1170,8 +1178,8 @@ class CompassConstraint extends Constraint{
                 this.penController.style.top = `${y - this.shape.offsetTop}px`
                 this.penEnd.style.left = `${x - this.shape.offsetLeft}px`
                 this.penEnd.style.top = `${y - this.shape.offsetTop}px`
-                this.recalculate();
-                this.inverseKinematics();
+                // this.recalculate();
+                // this.inverseKinematics();
             }
         })
         this.driver.constraintWindow.addEventListener("mouseup", () => {
@@ -1238,6 +1246,10 @@ class CompassConstraint extends Constraint{
             this.notch.style.top = `${ikPoint.y - this.shape.offsetTop}px`
             this.pinEnd.style.setProperty("rotate", (theta1*180/Math.PI) + 90 + "deg");
             this.penEnd.style.setProperty("rotate" , (theta2*180/Math.PI) + 90 + "deg");
+            let angle = (theta1 - theta2) * 180/Math.PI;
+            let positiveAngle = angle >= 0 ? angle : 360 + angle;
+            this.notch.dataset.angle = Math.round(positiveAngle) + "deg";
+            // console.log(positiveAngle);
         }
     }
 
@@ -1249,6 +1261,10 @@ class CompassConstraint extends Constraint{
             let theta = Math.atan2(point.y - tempY, point.x - tempX);
             let x = distance*Math.cos(theta) + tempX;
             let y = distance*Math.sin(theta) + tempY;
+            this.penEnd.style.left = `${x - this.shape.offsetLeft}px`
+            this.penEnd.style.top = `${y - this.shape.offsetTop}px`
+            this.recalculate()
+            this.inverseKinematics();
             return new Point(x, y)
         }
         return point
@@ -1275,7 +1291,7 @@ class StrokeCompressor {
     static EPSILON = Math.PI/50;
     static PRUNE_DEPTH = 3;
     static DELTA = 5;
-    static prunePath(path, depth = (StrokeCompressor.PRUNE_DEPTH || Infinity)) {
+    static prunePath(path, depth = (StrokeCompressor.PRUNE_DEPTH || 1)) {
         depth = depth - 1;
         let auxPathArray = [];
         for (let coordIndex in path) {
