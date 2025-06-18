@@ -346,6 +346,7 @@ body{
     ;
     white-space:no-wrap;
     width: max-content;
+    -webkit-user-drag: none;
 }
 
 .notch > span{
@@ -353,6 +354,7 @@ body{
     font-size: 12rem;
     user-select: none;
     pointer-events: none;
+    -webkit-user-drag: none;
 }
 
 pre{
@@ -868,6 +870,44 @@ dialog > div > .initialWrapper{
     flex-direction: column;
 }
 
+@media (any-pointer: coarse){
+    #ai > button{
+        opacity: 1;
+        transition: 0.2s;
+        transform: scale(1) !important;
+        width: initial;
+        overflow: hidden;
+        margin: 0;
+        padding: 0.75vh;
+        /* aspect-ratio: 1 / 1 !important; */
+        pointer-events:all;
+    }
+
+    #ai{
+        background-size: 0% 0%;
+        gap: 1vh;
+    }
+
+    .tools{
+        background-size: 0% 0%;
+        gap: 1vh;
+    }
+
+    .tools > button{
+        opacity: 1 !important;
+        transition: 0.2s;
+        transform: scale(1) !important;
+    }
+
+    .tools > button[data-type = "+"]{
+        opacity: 1 !important;
+        transition: 0.2s;
+        transform: scale(1) !important;
+        width: initial;
+        padding: 0.75vh !important;
+    }
+}
+
 button{
     box-shadow: var(--box-shadow);
     background-image: var(--noise);
@@ -880,6 +920,10 @@ button{
     outline: none;
     transition: box-shadow 0.2s;
     backdrop-filter: var(--backdrop-filter);
+}
+
+button:disabled{
+    opacity: 50%;
 }
 
 button:hover{

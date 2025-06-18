@@ -32,6 +32,10 @@ class CanvasManager {
             this.fitCanvasElement();
         };
         this.translation = new Point(0, 0);
+        this.prevMousePosition = new Point(0, 0);
+        this.prevMove = 0;
+        this.eraserMode = false;
+        this.canErase = false;
         this.strokeProperties = {
             color: getComputedStyle(document.documentElement).getPropertyValue('--penColor'),
             thickness: 5,
@@ -94,33 +98,31 @@ class CanvasManager {
     }
 
     mouseDown(e, point, forceDraw = false){
-        let x = (point ? point.x : e.x) - this.parent.offsetLeft;
-        let y = (point ? point.y : e.y) - this.parent.offsetTop;
-        if((e.button == 0) || forceDraw){
-            this.penDown = true;
-            this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
-            let stroke = this.strokes.at(-1)
-            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
-            stroke.drawStroke();
+        if(!this.eraserMode){
+            let x = (point ? point.x : e.x) - this.parent.offsetLeft;
+            let y = (point ? point.y : e.y) - this.parent.offsetTop;
+            if((e.button == 0) || forceDraw){
+                this.penDown = true;
+                this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
+                let stroke = this.strokes.at(-1)
+                stroke.add(new Point(x - this.translation.x, y - this.translation.y));
+                stroke.drawStroke();
+            }
+            if ((e.button == 1) && (!forceDraw)) {
+                e.preventDefault();
+                this.translationBegin = new Point(x, y);
+                // console.log(x, y);
+                this.canTranslate = true;
+                this.prevTranslation = this.translation.copy();
+                this.penDown = false;
+            }
         }
-        if ((e.button == 1) && (!forceDraw)) {
-            e.preventDefault();
-            this.translationBegin = new Point(x, y);
-            // console.log(x, y);
-            this.canTranslate = true;
-            this.prevTranslation = this.translation.copy();
+        else{
+            this.canErase = true;
         }
-    }
-    mouseDownWithoutMove(e, point, forceDraw = false){
-        let x = (point ? point.x : e.x) - this.parent.offsetLeft;
-        let y = (point ? point.y : e.y) - this.parent.offsetTop;
-        if((e.button == 0) || forceDraw){
-            this.penDown = true;
-            this.strokes.push(new Stroke([], this.canvasCtx, this.strokeProperties, false, this));
-            let stroke = this.strokes.at(-1)
-            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
-            stroke.drawStroke();
-        }
+        this.prevMousePosition.x = e.x
+        this.prevMousePosition.y = e.y
+        this.prevMove = 0;
     }
 
     contextMenu(e){
@@ -129,6 +131,8 @@ class CanvasManager {
         let y = e.y - this.parent.offsetTop;
         this.canvasCustomizationInterface.active(x, y);
         this.canTranslate = false;
+        this.eraserMode = false;
+        this.canErase = false;
     }
 
     mouseLeave(e,point, stopCompress = false ,forceDraw = false){
@@ -145,6 +149,7 @@ class CanvasManager {
             }
         }
         this.canTranslate = false;
+        this.canErase = false;
     }
 
     mouseUp(e, point, stopCompress = false, forceDraw = false){
@@ -166,44 +171,117 @@ class CanvasManager {
             e.preventDefault();
             this.canTranslate = false;
         }
+        this.canErase = false;
     }
 
     mouseMove(e, point){
+        this.prevMove = this.prevMove + 1;
         let x = (point ? point.x : e.x) - this.parent.offsetLeft;
         let y = (point ? point.y : e.y) - this.parent.offsetTop;
-        if (this.penDown) {
-            let stroke = this.strokes.at(-1)
-            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
-            stroke.drawStroke();
+        if(!this.eraserMode){
+            if (this.penDown) {
+                let stroke = this.strokes.at(-1)
+                stroke.add(new Point(x - this.translation.x, y - this.translation.y));
+                stroke.drawStroke();
+            }
+            e.preventDefault();
+            if (this.canTranslate) {
+                this.move.x = x - this.translationBegin.x;
+                this.move.y = y - this.translationBegin.y;
+                this.translation.x = this.prevTranslation.x + this.move.x
+                this.translation.y = this.prevTranslation.y + this.move.y
+                // this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+                document.body.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
+                this.render();
+            }
+            this.currentMouseCoord.x = Math.round(e.x - this.parent.offsetLeft - this.translation.x);
+            this.currentMouseCoord.y = Math.round(e.y - this.parent.offsetTop - this.translation.y);
+    
+            this.coordCounter.innerText = `${this.currentMouseCoord.x}, ${ this.currentMouseCoord.y}`
         }
-        e.preventDefault();
-        if (this.canTranslate) {
-            this.move.x = x - this.translationBegin.x;
-            this.move.y = y - this.translationBegin.y;
-            this.translation.x = this.prevTranslation.x + this.move.x
-            this.translation.y = this.prevTranslation.y + this.move.y
-            // this.parent.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
-            document.body.style.backgroundPosition = `${this.translation.x}px ${this.translation.y}px`
-            this.render();
+        else if(this.canErase == true){
+            this.erase(e.x, e.y);
         }
-        this.currentMouseCoord.x = Math.round(e.x - this.parent.offsetLeft - this.translation.x);
-        this.currentMouseCoord.y = Math.round(e.y - this.parent.offsetTop - this.translation.y);
-
-        this.coordCounter.innerText = `${this.currentMouseCoord.x}, ${ this.currentMouseCoord.y}`
+        if(this.prevMove >= 50){
+            this.prevMousePosition.x = e.x;
+            this.prevMousePosition.y = e.y;
+            this.prevMove = 0;
+        }
     }
-    mouseMoveWithoutMove(e, point){
-        let x = (point ? point.x : e.x) - this.parent.offsetLeft;
-        let y = (point ? point.y : e.y) - this.parent.offsetTop;
-        if (this.penDown) {
-            let stroke = this.strokes.at(-1)
-            stroke.add(new Point(x - this.translation.x, y - this.translation.y));
-            stroke.drawStroke();
-        }
-        e.preventDefault();
-        this.currentMouseCoord.x = Math.round(e.x - this.parent.offsetLeft - this.translation.x);
-        this.currentMouseCoord.y = Math.round(e.y - this.parent.offsetTop - this.translation.y);
 
-        this.coordCounter.innerText = `${this.currentMouseCoord.x}, ${ this.currentMouseCoord.y}`
+    erase(sX, sY){
+        let gX = sX - this.translation.x;
+        let gY = sY - this.translation.y;
+        let gPX = this.prevMousePosition.x - this.translation.x;
+        let gPY = this.prevMousePosition.y - this.translation.y;
+        let collideAble = [];
+        for(let i = this.strokes.length - 1;i >= 0; i--){
+            let element = this.strokes[i];
+            if(element instanceof Stroke){
+                let boundingBox = element.getGlobalBoundingBox();
+                let intersect1 = pointToRectangle(boundingBox, gX, gY);
+                let intersect2 = pointToRectangle(boundingBox, gPX, gPY);
+                if(intersect1 || intersect2){
+                    collideAble.push([...element.points, i]);
+                }
+            }
+            else{
+                let boundingBox = element.getGlobalBoundingBox();
+                if((!Array.isArray(boundingBox)) && (boundingBox.circle == false)){
+                    let intersect1 = pointToRectangle(boundingBox, gX, gY);
+                    let intersect2 = pointToRectangle(boundingBox, gPX, gPY);
+                    if(intersect1 || intersect2){
+                        if((element.shape == "square") || (element.shape == "rectangle")){
+                            collideAble.push([new Point(boundingBox.topX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.topY), i])
+                        }
+                        else{
+                            let points = [...element.geometryInfo, element.geometryInfo[0], i];
+                            collideAble.push(points)
+                        }
+                    }
+                }
+                else{
+                    if((element.shape == "circle")){
+                        collideAble.push([element.geometryInfo, i])
+                    }
+                    else if(element.shape == "line"){
+                        collideAble.push([...element.geometryInfo, i])
+                    }
+                    else{
+                        let points = [...element.geometryInfo, element.geometryInfo[0], i];
+                        collideAble.push(points)
+                    }
+                }
+            }
+        }
+
+        for(let element of collideAble){
+            let index = element[element.length - 1];
+            let first = element[0];
+            if(element[0] instanceof Point){
+                let collided = false;
+                for (let i = 0; i <= (element.length - 3); i++) {
+                    let point1 = element[i];
+                    let point2 = element[i + 1];
+                    let intersect = lineToLine(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY);
+                    if(intersect){
+                        collided = true;
+                        break;
+                    }
+                }
+                if(collided){
+                    let graphic = this.strokes.splice(index, 1);
+                    this.redoQueue.push(graphic);
+                    this.render();
+                }
+            }
+            else if(ellipseToLine(first.x, first.y, first.rx, first.ry, gX, gY, gPX, gPY)){
+                let graphic = this.strokes.splice(index, 1);
+                this.redoQueue.push(graphic);
+                this.render();
+                // console.log(first, ellipseToLine(first.x, first.y, first.rx, first.ry, gX, gY, gPX, gPY))
+            }
+        }
     }
 
     controlManager() {
@@ -362,6 +440,14 @@ class Stroke {
         }
         this.points = auxPath;
     }
+
+    getGlobalBoundingBox(){
+        let topX = Math.min(...this.points.map(e => e.x));
+        let topY = Math.min(...this.points.map(e => e.y));
+        let bottomX = Math.max(...this.points.map(e => e.x))
+        let bottomY = Math.max(...this.points.map(e => e.y))
+        return {topX, topY, bottomX, bottomY, circle:false};
+    }
 }
 
 // new Shape("triangle", Canvas.canvasCtx, Canvas.shapeProperties, [new Point(100, 100), new Point(200, 200), new Point(100, 200), new Point(100, 100)], Canvas).drawShape();
@@ -431,6 +517,33 @@ class Shape{
         }
         canvasCtx.stroke();
         canvasCtx.fill();
+    }
+
+    getGlobalBoundingBox(){
+        switch (this.shape) {
+            case "line":
+                return this.geometryInfo;
+            case "triangle":
+                return this.geometryInfo;
+            case "freeShape":
+                let topX = Math.min(...this.geometryInfo.map(e => e.x));
+                let topY = Math.min(...this.geometryInfo.map(e => e.y));
+                let bottomX = Math.max(...this.geometryInfo.map(e => e.x))
+                let bottomY = Math.max(...this.geometryInfo.map(e => e.y))
+                return {topX, topY, bottomX, bottomY, circle:false};
+            case "circle":
+                return {geometryInfo:this.geometryInfo, circle:true};
+            case "square":
+                let sX1 = this.geometryInfo.x; // x coordinate
+                let sY1 = this.geometryInfo.y; // y coordinate
+                let sX2 = sX1 + this.geometryInfo.side; // Side
+                let sY2 = sY1 + (this.geometryInfo.signY*Math.abs(this.geometryInfo.side)); // Side
+                return {topX:Math.min(sX1, sX2), topY:Math.min(sY1, sY2), bottomX:Math.max(sX1, sX2), bottomY:Math.max(sY1, sY2), circle:false};
+            case "rectangle":
+                return {topX:this.geometryInfo.x, topY:this.geometryInfo.y, bottomX:this.geometryInfo.x + this.geometryInfo.width, bottomY: this.geometryInfo.y + this.geometryInfo.height, circle:false};
+            default:
+                break;
+        }
     }
 
     circle(canvasCtx = this.canvasCtx){
@@ -1021,6 +1134,7 @@ class CompassConstraint extends Constraint{
         this.notchPrevTranslation = new Point(this.notch.offsetLeft, this.notch.offsetTop);
         this.prevLocation = new Point(this.shape.offsetLeft, this.shape.offsetTop)
         this.notchCanMove = false;
+        this.notch.draggable = false;
         this.notch.addEventListener("mousedown", (e) => {
             e.stopPropagation();
             this.notchCanMove = true;
@@ -1362,6 +1476,92 @@ function dist(x1, y1, x2, y2){
     return Math.sqrt(dx**2 + dy**2);
 }
 
+function ellipseToLine(cx, cy, rx, ry, x0, y0, x1, y1) {
+  let dx = x1 - x0;
+  let dy = y1 - y0;
+
+  // Check if both points are inside ellipse
+  let p0Inside = pointInsideEllipse(cx, cy, rx, ry, x0, y0);
+  let p1Inside = pointInsideEllipse(cx, cy, rx, ry, x1, y1);
+
+  if (p0Inside && p1Inside) {
+    // both inside — no circumference collision
+    return false;
+  }
+
+  // Check discriminant for intersection
+  let A = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
+  let B = 2 * ((dx * (x0 - cx)) / (rx * rx) + (dy * (y0 - cy)) / (ry * ry));
+  let C = ((x0 - cx) * (x0 - cx)) / (rx * rx) + ((y0 - cy) * (y0 - cy)) / (ry * ry) - 1;
+
+  let discriminant = B * B - 4 * A * C;
+
+  if (discriminant < 0) {
+    // no intersection
+    return false;
+  }
+
+  // optional: check t values if you care about segment-only intersection
+  let sqrtD = Math.sqrt(discriminant);
+  let t1 = (-B + sqrtD) / (2 * A);
+  let t2 = (-B - sqrtD) / (2 * A);
+
+  // Check if intersection happens within line segment
+  if ((0 <= t1 && t1 <= 1) || (0 <= t2 && t2 <= 1)) {
+    return true;
+  }
+
+  // else no circumference collision
+  return false;
+}
+
+function pointInsideEllipse(cx, cy, rx, ry, px, py) {
+  let dx = px - cx;
+  let dy = py - cy;
+  return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1;
+}
+
+function lineToLine(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y) {
+    const denominator = (p1x - p2x) * (p3y - p4y) - (p1y - p2y) * (p3x - p4x);
+
+    if (denominator === 0) {
+        // Lines are parallel or collinear
+        return false; 
+    }
+
+    const numeratorA = (p1y - p3y) * (p3x - p4x) - (p1x - p3x) * (p3y - p4y);
+    const numeratorB = (p1y - p3y) * (p1x - p2x) - (p1x - p3x) * (p1y - p2y);
+
+    const uA = numeratorA / denominator;
+    const uB = numeratorB / denominator;
+
+    if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
+        return true; 
+    } else {
+        return false;
+    }
+}
+
+function lineToRectangle(rectInfo, x1, y1, x2, y2){
+    let top = lineToLine(rectInfo.topX, rectInfo.topY, rectInfo.bottomX, rectInfo.topY, x1, y1, x2, y2);
+    let left = lineToLine(rectInfo.topX, rectInfo.topY, rectInfo.topX, rectInfo.bottomY, x1, y1, x2, y2);
+    let bottom = lineToLine(rectInfo.topX, rectInfo.bottomY, rectInfo.bottomX, rectInfo.bottomY, x1, y1, x2, y2);
+    let right = lineToLine(rectInfo.bottomX, rectInfo.topY, rectInfo.bottomX, rectInfo.bottomY, x1, y1, x2, y2);
+    return (top || left) || (bottom || right);
+}
+
+function pointToRectangle(rectInfo, x, y){
+    // console.log(rectInfo)
+    let collided = true;
+    if((x < rectInfo.topX) || (x > rectInfo.bottomX)){
+        collided = false;
+    }
+    if((y < rectInfo.topY) || (y > rectInfo.bottomY)){
+        collided = false;
+    }
+    return collided
+}
+
 function ik(a, b, A, B) {
     let C = dist(a.x, a.y, b.x, b.y)
     let th = Math.acos( (B**2 + C**2 - A**2) / (2*B*C) )
@@ -1540,11 +1740,12 @@ class CanvasCustomizationInterface {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.colorPicker1.value = getComputedStyle(document.documentElement).getPropertyValue('--eraserColor')
-            if(this.shapeProperties.strokeColor != false){
-                this.shapeProperties.strokeColor = this.colorPicker1.value;
-            }
-            this.strokeProperties.color = this.colorPicker1.value;
+            // this.colorPicker1.value = getComputedStyle(document.documentElement).getPropertyValue('--eraserColor')
+            // if(this.shapeProperties.strokeColor != false){
+            //     this.shapeProperties.strokeColor = this.colorPicker1.value;
+            // }
+            // this.strokeProperties.color = this.colorPicker1.value;
+            this.manager.eraserMode = true;
         })
         this.clear.addEventListener("click", () => {
             this.manager.strokes = listenableArray();
@@ -1632,6 +1833,7 @@ class CanvasCustomizationInterface {
     }
     active(x = 10, y = 10){
         if(!this.activeStatus){
+            this.manager.eraserMode = false;
             if(this.touchscreenInterface){
                 this.touchscreenInterface.innerText = "Tools"
                 iconify(this.touchscreenInterface);
