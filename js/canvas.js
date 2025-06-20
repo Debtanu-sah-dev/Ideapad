@@ -120,8 +120,8 @@ class CanvasManager {
         else{
             this.canErase = true;
         }
-        this.prevMousePosition.x = e.x
-        this.prevMousePosition.y = e.y
+        this.prevMousePosition.x = e.x;
+        this.prevMousePosition.y = e.y;
         this.prevMove = 0;
     }
 
@@ -200,11 +200,11 @@ class CanvasManager {
             this.coordCounter.innerText = `${this.currentMouseCoord.x}, ${ this.currentMouseCoord.y}`
         }
         else if(this.canErase == true){
-            this.erase(e.x, e.y);
+            this.erase(x, y);
         }
         if(this.prevMove >= 50){
-            this.prevMousePosition.x = e.x;
-            this.prevMousePosition.y = e.y;
+            this.prevMousePosition.x = x;
+            this.prevMousePosition.y = y;
             this.prevMove = 0;
         }
     }
@@ -215,6 +215,13 @@ class CanvasManager {
         let gPX = this.prevMousePosition.x - this.translation.x;
         let gPY = this.prevMousePosition.y - this.translation.y;
         let collideAble = [];
+        // let sp = structuredClone(Canvas.strokeProperties);
+        // console.log(gPX, gPY)
+        // sp.color = "#00ff00"
+        // let rectangle = new Shape("line", Canvas.canvasCtx, sp, [new Point(gX, gY), new Point(gPX, gPX)], Canvas);
+        // rectangle.shapeEditor.killEditor();
+        // new Stroke([new Point(gX, gY), new Point(gPX, gPY)], Canvas.canvasCtx, sp, false, Canvas).drawStroke();
+        // rectangle.drawShape();
         for(let i = this.strokes.length - 1;i >= 0; i--){
             let element = this.strokes[i];
             if(element instanceof Stroke){
@@ -264,7 +271,9 @@ class CanvasManager {
                     let point1 = element[i];
                     let point2 = element[i + 1];
                     let intersect = lineToLine(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY);
+                    // console.log(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY)
                     if(intersect){
+                        // new Stroke([new Point(point1.x, point1.y), new Point(point2.x, point2.y)], Canvas.canvasCtx, sp, false, Canvas).drawStroke();
                         collided = true;
                         break;
                     }
@@ -1521,26 +1530,38 @@ function pointInsideEllipse(cx, cy, rx, ry, px, py) {
   return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1;
 }
 
-function lineToLine(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y) {
-    const denominator = (p1x - p2x) * (p3y - p4y) - (p1y - p2y) * (p3x - p4x);
+// function lineToLine(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y) {
+//     const denominator = (p1x - p2x) * (p3y - p4y) - (p1y - p2y) * (p3x - p4x);
 
-    if (denominator === 0) {
-        // Lines are parallel or collinear
-        return false; 
-    }
+//     if (denominator === 0) {
+//         // Lines are parallel or collinear
+//         return false; 
+//     }
 
-    const numeratorA = (p1y - p3y) * (p3x - p4x) - (p1x - p3x) * (p3y - p4y);
-    const numeratorB = (p1y - p3y) * (p1x - p2x) - (p1x - p3x) * (p1y - p2y);
+//     const numeratorA = (p1y - p3y) * (p3x - p4x) - (p1x - p3x) * (p3y - p4y);
+//     const numeratorB = (p1y - p3y) * (p1x - p2x) - (p1x - p3x) * (p1y - p2y);
 
-    const uA = numeratorA / denominator;
-    const uB = numeratorB / denominator;
+//     const uA = numeratorA / denominator;
+//     const uB = numeratorB / denominator;
 
-    if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
-        return true; 
-    } else {
-        return false;
-    }
-}
+//     if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1) {
+//         return true; 
+//     } else {
+//         return false;
+//     }
+// }
+
+function lineToLine(a,b,c,d,p,q,r,s) {
+  var det, gamma, lambda;
+  det = (c - a) * (s - q) - (r - p) * (d - b);
+  if (det === 0) {
+    return false;
+  } else {
+    lambda = ((s - q) * (r - a) + (p - r) * (s - b)) / det;
+    gamma = ((b - d) * (r - a) + (c - a) * (s - b)) / det;
+    return (0 < lambda && lambda < 1) && (0 < gamma && gamma < 1);
+  }
+};
 
 function lineToRectangle(rectInfo, x1, y1, x2, y2){
     let top = lineToLine(rectInfo.topX, rectInfo.topY, rectInfo.bottomX, rectInfo.topY, x1, y1, x2, y2);
