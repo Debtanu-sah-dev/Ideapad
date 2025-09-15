@@ -1,0 +1,27 @@
+{
+    "name": "Gen",
+    "short_name": "Gen",
+    "description": "Gen provides you with summarized and easy to understand information for the topic of your choice. It contains voice assistant and the user interface is highly customizable.",
+    "icons": [
+      {
+        "src": "images/logo.svg",
+        "sizes": "1081x1081",
+        "type": "image/svg"
+      },
+      {
+        "src": "images/logo_small.svg",
+        "sizes": "1081x1081",
+        "type": "image/svg"
+      },
+      {
+        "src": "images/logo_contained.svg",
+        "sizes": "1081x1081",
+        "type": "image/svg"
+      }
+    ],
+    "start_url": "/",
+    "display": "fullscreen",
+    "display_override": ["standalone","window-control-overlay", "minimal-ui"],
+    "theme_color": "#232323",
+    "background_color": "#23232385"
+  }
