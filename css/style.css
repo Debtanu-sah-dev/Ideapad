@@ -460,7 +460,7 @@ pre span.token.punctuation {
     display: flex;
     /* gap: 1vh; */
     border-radius: 100vmax;
-    margin:1vh;
+    margin:1vh 0vh;
     width: min-content;
     /* width: 7vh; */
     max-width: fit-content;
