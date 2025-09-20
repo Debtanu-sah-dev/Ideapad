@@ -582,6 +582,13 @@ pre span.token.punctuation {
     background: #FF0000;
 }
 
+.tabs > button{
+    word-break: keep-all;
+    word-wrap: normal;
+    white-space-collapse:preserve-spaces ;
+    white-space: nowrap;
+}
+
 .contentContainer{
     flex-basis: 100%;
     width: 100%;
