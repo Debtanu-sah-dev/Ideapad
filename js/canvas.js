@@ -98,6 +98,32 @@ class CanvasManager {
     }
 
     mouseDown(e, point, forceDraw = false){
+        // --- GUARD: allow drawing when top element is the .constraint container itself,
+        // but block when the top element is a UI element (ruler/handle/child of .constraint).
+        if (!forceDraw) {
+        const cx = (typeof e.clientX !== 'undefined') ? e.clientX : e.x;
+        const cy = (typeof e.clientY !== 'undefined') ? e.clientY : e.y;
+        const topEl = document.elementFromPoint(cx, cy);
+
+        if (topEl) {
+            // If the top element is the canvas itself, let drawing proceed
+            if (topEl === this.canvasElement || this.canvasElement.contains(topEl)) {
+            // OK — proceed to drawing
+            } else {
+            // Check if the top element is the constraint container itself
+            const constraintAncestor = topEl.closest && topEl.closest('.constraint');
+            const topIsConstraintContainer = constraintAncestor && topEl === constraintAncestor;
+
+            if (!topIsConstraintContainer) {
+                // pointer started on a UI element (ruler/handle/child of constraint) — don't start drawing
+                this.penDown = false;
+                return;
+            }
+            // else: topEl IS the .constraint container itself -> allow drawing
+            }
+        }
+        }
+
         if(!this.eraserMode){
             let x = (point ? point.x : e.x) - this.parent.offsetLeft;
             let y = (point ? point.y : e.y) - this.parent.offsetTop;
@@ -881,6 +907,7 @@ class ScaleConstraint extends Constraint{
             // let x = contrain.x + this.manager.parent.offsetLeft
             // let y = contrain.y + this.manager.parent.offsetTop
             // this.manager.mouseMove(e, new Point(x, y))
+            // e.preventDefault();
             if(this.lastMouseDownInShape){
                 this.canConstrain = false;
                 // e.stopPropagation();
@@ -904,16 +931,16 @@ class ScaleConstraint extends Constraint{
             this.inShape = true;
         })
 
-        this.shape.addEventListener("mouseleave", (e) => {
-            if(this.inShape){
-                // this.manager.mouseUp(e);
-                this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
-            }
-            this.inShape = false;
-            // if(this.canConstrain == true){
-            //     this.canConstrain = false;
-            // }
-        })
+        // this.shape.addEventListener("mouseleave", (e) => {
+        //     if(this.inShape){
+        //         // this.manager.mouseUp(e);
+        //         this.manager.strokes.push(new Stroke([], this.manager.canvasCtx, this.manager.strokeProperties, false, this.manager));
+        //     }
+        //     this.inShape = false;
+        //     // if(this.canConstrain == true){
+        //     //     this.canConstrain = false;
+        //     // }
+        // })
         this.shape.addEventListener("mousedown", (e) => {
             e.stopPropagation();
             this.mouseDownCoord.x = e.x - this.shape.offsetLeft;
