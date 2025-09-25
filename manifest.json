@@ -1,27 +1,68 @@
 {
-    "name": "Gen",
-    "short_name": "Gen",
-    "description": "Gen provides you with summarized and easy to understand information for the topic of your choice. It contains voice assistant and the user interface is highly customizable.",
+    "name": "Ideapad",
+    "short_name": "Ideapad",
+    "description": "AI Sketch Pad",
     "icons": [
       {
-        "src": "images/logo.svg",
+        "src": "images/iconXL.png",
         "sizes": "1081x1081",
-        "type": "image/svg"
+        "type": "image/png"
       },
       {
-        "src": "images/logo_small.svg",
-        "sizes": "1081x1081",
-        "type": "image/svg"
+        "src": "images/iconL.png",
+        "sizes": "541x541",
+        "type": "image/png"
       },
       {
-        "src": "images/logo_contained.svg",
-        "sizes": "1081x1081",
-        "type": "image/svg"
+        "src": "images/iconS.png",
+        "sizes": "144x144",
+        "type": "image/png"
+      }
+    ],
+    "screenshots":[
+      {
+        "form_factor":"wide",
+        "src": "images/ScreenShots/1.png",
+        "sizes": "1918x1078",  
+        "type": "image/png",
+        "label":"Search your topic",
+        "description":"Sketch your Questions, Idea and create a Mind Map."
+      },
+      {
+        "form_factor":"wide",
+        "src": "images/ScreenShots/2.png",
+        "sizes": "1918x1078",  
+        "type": "image/png",
+        "label":"Search your topic",
+        "description":"Need Assistance use AI mode. AI helps you to solve your query, clarify your doubts, or explain you any concept in detail."
+      },
+      {
+        "src": "images/ScreenShots/3.png",
+        "sizes": "1917x1078",  
+        "type": "image/png",
+        "label":"Search your topic",
+        "description":"Need a interactive playground to heighten your understanding, want a simulation, or a quick applet, give a heading and the specification of exactly what you need."
+      },
+      {
+        "form_factor":"wide",
+        "src": "images/ScreenShots/4.png",
+        "sizes": "1918x1078",  
+        "type": "image/png",
+        "label":"Search your topic",
+        "description":"Here is an example of Double pendulum simulation, A clean UI to help you get the visual of a thing than just a concept, see things being in motion."
+      },
+      {
+        "form_factor":"wide",
+        "src": "images/ScreenShots/5.png",
+        "sizes": "1918x1078",  
+        "type": "image/png",
+        "label":"Search your topic",
+        "description":"Not satisfied with the results or want a modification then type the modification you need and it will give you just that. as simple a thinking."
       }
     ],
     "start_url": "/",
     "display": "fullscreen",
     "display_override": ["standalone","window-control-overlay", "minimal-ui"],
-    "theme_color": "#232323",
-    "background_color": "#23232385"
+    "theme_color": "#000000",
+    "background_color": "#00000085"
   }

@@ -295,9 +295,9 @@ html{
     top: 0;
     left: 0;
     transform: translate(-50%, -50%);
-    width: 7vmin;
-    height: 7vmin;
-    /* background-color: blue; */
+    width: 20%;
+    height: 20%;
+    background: radial-gradient(#ffffff85, transparent);
     border-radius: 100vmax;
 }
 .penController{
@@ -305,9 +305,9 @@ html{
     top: 100%;
     left: 100%;
     transform: translate(-50%, -50%);
-    width: 7vmin;
-    height: 7vmin;
-    /* background-color: blue; */
+    width: 20%;
+    height: 20%;
+    background: radial-gradient(#ffffff85, transparent);
     border-radius: 100vmax;
 }
 
