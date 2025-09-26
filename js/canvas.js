@@ -34,7 +34,7 @@ class CanvasManager {
         this.translation = new Point(0, 0);
         this.prevMousePosition = new Point(0, 0);
         this.prevMove = 0;
-        this.pointEraseTolerance = 2;
+        this.pointEraseTolerance = 5;
         this.eraserMode = false;
         this.canErase = false;
         this.strokeProperties = {
