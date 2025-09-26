@@ -34,6 +34,7 @@ class CanvasManager {
         this.translation = new Point(0, 0);
         this.prevMousePosition = new Point(0, 0);
         this.prevMove = 0;
+        this.pointEraseTolerance = 2;
         this.eraserMode = false;
         this.canErase = false;
         this.strokeProperties = {
@@ -252,6 +253,10 @@ class CanvasManager {
             let element = this.strokes[i];
             if(element instanceof Stroke){
                 let boundingBox = element.getGlobalBoundingBox();
+                if(Math.abs((boundingBox.topX - boundingBox.bottomX)*(boundingBox.topY - boundingBox.bottomY)) <= ((this.pointEraseTolerance**2)*Math.PI)){
+                    collideAble.push([...element.points, i]);
+                    continue;
+                }
                 let intersect1 = pointToRectangle(boundingBox, gX, gY);
                 let intersect2 = pointToRectangle(boundingBox, gPX, gPY);
                 if(intersect1 || intersect2){
@@ -293,15 +298,25 @@ class CanvasManager {
             let first = element[0];
             if(element[0] instanceof Point){
                 let collided = false;
-                for (let i = 0; i <= (element.length - 3); i++) {
-                    let point1 = element[i];
-                    let point2 = element[i + 1];
-                    let intersect = lineToLine(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY);
-                    // console.log(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY)
-                    if(intersect){
-                        // new Stroke([new Point(point1.x, point1.y), new Point(point2.x, point2.y)], Canvas.canvasCtx, sp, false, Canvas).drawStroke();
+                let boundingBox = [...element];
+                boundingBox.pop();
+                boundingBox = new Stroke(boundingBox).getGlobalBoundingBox();
+                if(Math.abs((boundingBox.topX - boundingBox.bottomX)*(boundingBox.topY - boundingBox.bottomY)) <= ((this.pointEraseTolerance**2)*Math.PI)){
+                    if(ellipseToLine(first.x, first.y, this.pointEraseTolerance*2, this.pointEraseTolerance*2, gX, gY, gPX, gPY)){
                         collided = true;
-                        break;
+                    }
+                }
+                else{
+                    for (let i = 0; i <= (element.length - 3); i++) {
+                        let point1 = element[i];
+                        let point2 = element[i + 1];
+                        let intersect = lineToLine(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY);
+                        // console.log(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY)
+                        if(intersect){
+                            // new Stroke([new Point(point1.x, point1.y), new Point(point2.x, point2.y)], Canvas.canvasCtx, sp, false, Canvas).drawStroke();
+                            collided = true;
+                            break;
+                        }
                     }
                 }
                 if(collided){
@@ -418,7 +433,7 @@ class CanvasManager {
 }
 
 class Stroke {
-    constructor(points = [], canvasCtx, strokeProperties, shapeDriver = false, manager) {
+    constructor(points = [], canvasCtx, strokeProperties = {}, shapeDriver = false, manager) {
         this.points = points != null ? [...points] : [];
         this.canvasCtx = canvasCtx;
         this.strokeProperties = structuredClone(strokeProperties);
@@ -1794,6 +1809,9 @@ class CanvasCustomizationInterface {
             // }
             // this.strokeProperties.color = this.colorPicker1.value;
             this.manager.eraserMode = true;
+            if(this.touchscreenInterface){
+                this.touchscreenInterface.querySelector("span").innerText = "ink_eraser_off"
+            }
         })
         this.clear.addEventListener("click", () => {
             this.manager.strokes = listenableArray();
