@@ -50,13 +50,28 @@ const generationConfigForRectification = {
         }
    }
 };
+const generationConfigForDiagram = {
+    model:"gemini-2.5-flash-preview-05-20",
+    generationConfig:{
+        responseMimeType: 'application/json',
+        responseSchema: {
+            "type": "object",
+            "properties": {
+                "svg": { "type": "string" },
+            },
+            "required": ["svg"]
+        }
+   }
+};
 const model = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-05-20"});
 const modelApplet = genAI.getGenerativeModel(generationConfig);
 const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
+const modelDiagram = genAI.getGenerativeModel(generationConfigForDiagram);
 const modelFast = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-05-20"});
 const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject.";
 const metaPrompt = "Explain this image and give a small summary of what is illustrated and what topic and frameworks it is based on, give description of this image giving a complete picture of the image in just 100 words altogether.";
 const rectificationPrompt = `check and rectify the above code, check for any potential errors and fix it. remove any html, CSS or JavaScript comments. remove all the comments strictly. check that all CSS properties are valid else fix it, check all html tags and attributes are proper and no attribute is mixed with the tag name like:- <pid="paragraph">...</p> is wrong so make it <p id="paragraph">...</p>. In JavaScript check for any functions which are called but not defined:-Example makeGraph() is called somewhere in the entire code but is not made so write the make graph function by understanding the HTML codes context and make it so it works with the integrity of the HTML code without giving rise to another error, check for any syntax error like extra }, ), not using proper syntax etc.`;
+const diagramPrompt = "\n\nCreate a svg code using the above context which is of flat design paradigm representing the following in it: ";
 const inputType = [
     "button",
     "checkbox",
@@ -89,6 +104,7 @@ export class AI{
         this.prompt = prompt;
         this.model = model;
         this.parent = parent;
+        this.response = null;
         this.imageDataURL = {
             inlineData: {
               data: "",
@@ -98,10 +114,16 @@ export class AI{
         this.explaining = false;
         this.run = this.run.bind(this);
         this.giveMetaPrompt = this.giveMetaPrompt.bind(this);
+        this.createDiagram = this.createDiagram.bind(this);
         this.dialog = document.createElement("dialog");
         this.dialog.classList.add("aiDialog");
         this.dialog.setAttribute("closedby", "any");
         this.parent.appendChild(this.dialog);
+        this.diagramDialog = document.createElement("dialog");
+        this.diagramDialog.classList.add("aiDialog");
+        this.diagramDialog.classList.add("diagramDialog");
+        this.diagramDialog.setAttribute("closedby", "any");
+        this.parent.appendChild(this.diagramDialog);
         // this.dialog.addEventListener("blur", () => {
             //     this.dialog.close()
             // })
@@ -131,29 +153,78 @@ export class AI{
         this.openDialog.innerText = "AI";
         this.parent.appendChild(this.openDialog);
         this.canRespond = true;
+        this.canDiagram = true;
+        this.createResponseTools = document.createElement("div");
+        this.createResponseTools.classList.add("createResponseTools")
         this.createResponseButton = document.createElement("button");
+        this.createDiagramButton = document.createElement("button");
+        this.responseInput = document.createElement("input");
+        this.responseInput.placeholder = "Ask anything or create a diagram"
         this.createResponseButton.classList.add("createResponseButton");
+        this.createDiagramButton.classList.add("createDiagramButton");
+        this.responseInput.classList.add("responseInput");
         this.createResponseButton.addEventListener("click", async () => {
-            if(this.canRespond == true){
+            if((this.canRespond == true)){
                 this.createResponseButton.disabled = true;
+                this.createDiagramButton.disabled = true;
                 this.canRespond = false;
+                this.canDiagram = false;
                 await this.run();
                 this.createResponseButton.disabled = false;
+                this.createDiagramButton.disabled = false;
                 this.canRespond = true;
+                this.canDiagram = true;
             }
         })
+        this.createDiagramButton.addEventListener("click", async () => {
+            console.log("clicked", this.canDiagram, this.canRespond)
+            if((this.canRespond == true) && (this.canDiagram == true)){
+                this.createResponseButton.disabled = true;
+                this.createDiagramButton.disabled = true;
+                this.canRespond = false;
+                this.canDiagram = false;
+                console.log("suc")
+                await this.createDiagram(this.responseInput.value);
+                this.createResponseButton.disabled = false;
+                this.createDiagramButton.disabled = false;
+                this.canRespond = true;
+            }
+            this.diagramDialog.showModal();
+            let svgs = this.diagramDialog.querySelectorAll("svg");
+            let lastSvg = svgs[svgs.length - 1];
+            if(lastSvg){
+                lastSvg.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+        })
+        this.createDiagramButton.disabled = true;
         this.createResponseButton.innerText = "Explain";
+        this.createDiagramButton.innerText = "Diagram";
 
-        this.dialog.appendChild(this.createResponseButton);
+        this.createResponseTools.appendChild(this.responseInput);
+        this.createResponseTools.appendChild(this.createDiagramButton);
+        this.createResponseTools.appendChild(this.createResponseButton);
+        this.dialog.appendChild(this.createResponseTools);
     }
     run = async () => {
         let url = this.manager.getDataUrl();
         this.responseImage.src = url.join(",");
         this.imageDataURL.inlineData.data = url[1];
-        const result = await model.generateContent([structuredClone(this.imageDataURL), this.prompt]);
+        const result = await model.generateContent([structuredClone(this.imageDataURL), `${this.prompt} ${this.responseInput.value != "" ? ("\nGive importance to the following: " + this.responseInput.value): ""}`]);
+        this.response = result.response.text();
         this.responseText.innerHTML = DOMPurify.sanitize(marked.parse(result.response.text()));
         mathRectify(this.responseText);
         Prism.highlightAllUnder(this.responseText)
+    }
+
+    createDiagram = async (text) => {
+        if((this.response != null)){
+            let url = this.manager.getDataUrl();
+            this.responseImage.src = url.join(",");
+            this.imageDataURL.inlineData.data = url[1];
+            const result = await modelDiagram.generateContent([structuredClone(this.imageDataURL),this.response + diagramPrompt + text]);
+            console.log(JSON.parse(result.response.text()).svg);
+            this.diagramDialog.innerHTML += JSON.parse(result.response.text()).svg;
+        }
     }
 
     createResponse(){

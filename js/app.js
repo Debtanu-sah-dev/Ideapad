@@ -146,7 +146,8 @@ let textToIconMap = {
   "stop panning":"do_not_touch",
   "end freeshape":"edit_off",
   "ink":"replay",
-  "move": "drag_pan"
+  "move": "drag_pan",
+  "diagram": "flowchart"
 }
 
 

@@ -1087,3 +1087,29 @@ textarea{
 ::-webkit-scrollbar-thumb:hover {
   box-shadow: var(--reverse-box-shadow);
 }
+
+.createResponseTools{
+    display: flex;
+    justify-content: flex-end;
+    gap: 2vh;
+    width: 100%;
+}
+.responseInput{
+    flex-grow: 1;
+    min-width: 0;
+}
+.diagramDialog{
+    overflow: auto !important;
+    /* user-select: none; */
+    /* display: flex; */
+    justify-content: center !important;
+    align-items: flex-start !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+}
+
+.diagramDialog > svg{
+    background-color: white;
+    overflow:visible;
+    min-width: 100% !important;
+}
