@@ -2,7 +2,7 @@ import { GoogleGenerativeAI} from "@google/generative-ai";
 // console.log(Type);
 const genAI = new GoogleGenerativeAI(API_KEY);
 const generationConfig = {
-    model:"gemini-2.5-flash-preview-05-20",
+    model:"gemini-2.5-flash",
     // model:"gemini-2.5-pro-exp-03-25",
     generationConfig:{
         responseMimeType: 'application/json',
@@ -38,7 +38,7 @@ const generationConfig = {
     }
   };
 const generationConfigForRectification = {
-    model:"gemini-2.5-flash-preview-05-20",
+    model:"gemini-2.5-flash",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -51,7 +51,7 @@ const generationConfigForRectification = {
    }
 };
 const generationConfigForDiagram = {
-    model:"gemini-2.5-flash-preview-05-20",
+    model:"gemini-2.5-flash",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -63,15 +63,15 @@ const generationConfigForDiagram = {
         }
    }
 };
-const model = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-05-20"});
+const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
 const modelApplet = genAI.getGenerativeModel(generationConfig);
 const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
 const modelDiagram = genAI.getGenerativeModel(generationConfigForDiagram);
-const modelFast = genAI.getGenerativeModel({model: "gemini-2.5-flash-preview-05-20"});
+const modelFast = genAI.getGenerativeModel({model: "gemini-2.5-flash-lite"});
 const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject.";
 const metaPrompt = "Explain this image and give a small summary of what is illustrated and what topic and frameworks it is based on, give description of this image giving a complete picture of the image in just 100 words altogether.";
 const rectificationPrompt = `check and rectify the above code, check for any potential errors and fix it. remove any html, CSS or JavaScript comments. remove all the comments strictly. check that all CSS properties are valid else fix it, check all html tags and attributes are proper and no attribute is mixed with the tag name like:- <pid="paragraph">...</p> is wrong so make it <p id="paragraph">...</p>. In JavaScript check for any functions which are called but not defined:-Example makeGraph() is called somewhere in the entire code but is not made so write the make graph function by understanding the HTML codes context and make it so it works with the integrity of the HTML code without giving rise to another error, check for any syntax error like extra }, ), not using proper syntax etc.`;
-const diagramPrompt = "\n\nCreate a svg code using the above context which is of flat design paradigm representing the following in it: ";
+const diagramPrompt = "\n\nCreate a svg code using the above context which is of flat design paradigm, with a suitable background color and if and only if specified in the following then only do animation using either css or native animation tags in svg and if there is animation mentioned after the entire animation sequence is completed it should loop like a gif but strictly do not use animation until it is specified in the following and do not apply style to any element outside the svg like body, head, html etc. or change anything in the :root selector structure your code such that you don't use any class attribute to reference elements in css, work with data-types or ids,therefore create a svg representing the following in it: ";
 const inputType = [
     "button",
     "checkbox",
@@ -134,6 +134,13 @@ export class AI{
         this.close.addEventListener("click", () => {
             this.dialog.close();
         })
+        this.closeDiagram = document.createElement("button");
+        this.closeDiagram.innerText = "X";
+        this.closeDiagram.classList.add("closeDiagram")
+        this.closeDiagram.addEventListener("click", () => {
+            this.diagramDialog.close();
+        })
+        this.diagramDialog.appendChild(this.closeDiagram)
         this.dialog.appendChild(this.close);
         this.dialog.appendChild(this.responseContainer);
 
@@ -158,13 +165,15 @@ export class AI{
         this.createResponseTools.classList.add("createResponseTools")
         this.createResponseButton = document.createElement("button");
         this.createDiagramButton = document.createElement("button");
+        this.openDiagramButton = document.createElement("button");
         this.responseInput = document.createElement("input");
-        this.responseInput.placeholder = "Ask anything or create a diagram"
+        this.responseInput.placeholder = "Ask anything or create a diagram";
         this.createResponseButton.classList.add("createResponseButton");
         this.createDiagramButton.classList.add("createDiagramButton");
+        this.openDiagramButton.classList.add("openDiagramButton");
         this.responseInput.classList.add("responseInput");
         this.createResponseButton.addEventListener("click", async () => {
-            if((this.canRespond == true)){
+            if((this.canRespond == true) && (this.canDiagram == true)){
                 this.createResponseButton.disabled = true;
                 this.createDiagramButton.disabled = true;
                 this.canRespond = false;
@@ -188,9 +197,19 @@ export class AI{
                 this.createResponseButton.disabled = false;
                 this.createDiagramButton.disabled = false;
                 this.canRespond = true;
+                this.canDiagram = true;
             }
             this.diagramDialog.showModal();
-            let svgs = this.diagramDialog.querySelectorAll("svg");
+            let svgs = this.scrollableDiv.querySelectorAll("div");
+            let lastSvg = svgs[svgs.length - 1];
+            if(lastSvg){
+                lastSvg.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+        })
+        this.openDiagramButton.addEventListener("click", () => {
+            this.diagramDialog.showModal();
+            this.scrollableDiv.innerHTML += "";
+            let svgs = this.scrollableDiv.querySelectorAll("div");
             let lastSvg = svgs[svgs.length - 1];
             if(lastSvg){
                 lastSvg.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -199,11 +218,17 @@ export class AI{
         this.createDiagramButton.disabled = true;
         this.createResponseButton.innerText = "Explain";
         this.createDiagramButton.innerText = "Diagram";
+        this.openDiagramButton.innerText = "Gallery";
 
         this.createResponseTools.appendChild(this.responseInput);
+        this.createResponseTools.appendChild(this.openDiagramButton);
         this.createResponseTools.appendChild(this.createDiagramButton);
         this.createResponseTools.appendChild(this.createResponseButton);
         this.dialog.appendChild(this.createResponseTools);
+
+        this.scrollableDiv = document.createElement("div");
+        this.scrollableDiv.classList.add("scrollableDiv")
+        this.diagramDialog.appendChild(this.scrollableDiv)
     }
     run = async () => {
         let url = this.manager.getDataUrl();
@@ -223,7 +248,9 @@ export class AI{
             this.imageDataURL.inlineData.data = url[1];
             const result = await modelDiagram.generateContent([structuredClone(this.imageDataURL),this.response + diagramPrompt + text]);
             console.log(JSON.parse(result.response.text()).svg);
-            this.diagramDialog.innerHTML += JSON.parse(result.response.text()).svg;
+            let div = document.createElement("div");
+            div.innerHTML = JSON.parse(result.response.text()).svg;
+            this.scrollableDiv.appendChild(div);
         }
     }
 
@@ -274,7 +301,6 @@ class AppletManager{
         this.tabContainer.classList.add("tabContainer")
         this.tabs = document.createElement("div");
         this.tabs.classList.add("tabs")
-        this.tabContainer.appendChild(this.tabs);
         this.add = document.createElement("button");
         this.add.innerText = "+"
         this.addContainer = document.createElement("div");
@@ -335,7 +361,8 @@ class AppletManager{
         this.tools.classList.add("tools")
         this.tools.appendChild(this.add)
         this.tools.appendChild(this.close)
-        this.tabContainer.appendChild(this.tools)
+        this.tabContainer.appendChild(this.tabs);
+        this.tabContainer.appendChild(this.tools);
         this.contentContainers = [];
         this.contentContainer = document.createElement("div");
         this.contentContainer.classList.add("contentContainer");

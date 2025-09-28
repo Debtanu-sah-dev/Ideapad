@@ -147,7 +147,8 @@ let textToIconMap = {
   "end freeshape":"edit_off",
   "ink":"replay",
   "move": "drag_pan",
-  "diagram": "flowchart"
+  "diagram": "flowchart",
+  "gallery": "folder_data"
 }
 
 
