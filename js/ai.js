@@ -63,15 +63,152 @@ const generationConfigForDiagram = {
         }
    }
 };
+const generationConfigForQuiz = {
+    model:"gemini-2.5-flash",
+    generationConfig:{
+        responseMimeType: 'application/json',
+        responseSchema: {
+  "type": "object",
+  "properties": {
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "mcq",
+              "short",
+              "long",
+              "mcqms"
+            ]
+          },
+          "drawing": {
+            "type": "boolean"
+          },
+          "diagram": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "diagramSvg": {
+                "type": "string"
+              },
+              "question": {
+                "type": "string"
+              },
+              "answer": {
+                "type": "object",
+                "properties": {
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "option1": {
+                        "type": "string"
+                      },
+                      "option2": {
+                        "type": "string"
+                      },
+                      "option3": {
+                        "type": "string"
+                      },
+                      "option4": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "option1",
+                      "option2",
+                      "option3",
+                      "option4"
+                    ],
+                    "propertyOrdering": [
+                      "option1",
+                      "option2",
+                      "option3",
+                      "option4"
+                    ]
+                  },
+                  "answer_key": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "option1",
+                        "option2",
+                        "option3",
+                        "option4"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "options",
+                  "answer_key"
+                ],
+                "propertyOrdering": [
+                  "options",
+                  "answer_key"
+                ]
+              },
+              "hint": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "question",
+              "hint"
+            ],
+            "propertyOrdering": [
+              "diagramSvg",
+              "question",
+              "answer",
+              "hint"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "drawing",
+          "diagram",
+          "data"
+        ],
+        "propertyOrdering": [
+          "type",
+          "drawing",
+          "diagram",
+          "data"
+        ]
+      }
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "questions",
+    "title"
+  ],
+  "propertyOrdering": [
+    "questions",
+    "title"
+  ]
+}
+   }
+};
 const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
 const modelApplet = genAI.getGenerativeModel(generationConfig);
 const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
 const modelDiagram = genAI.getGenerativeModel(generationConfigForDiagram);
+const modelQuiz = genAI.getGenerativeModel(generationConfigForQuiz);
 const modelFast = genAI.getGenerativeModel({model: "gemini-2.5-flash-lite"});
 const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject.";
 const metaPrompt = "Explain this image and give a small summary of what is illustrated and what topic and frameworks it is based on, give description of this image giving a complete picture of the image in just 100 words altogether.";
 const rectificationPrompt = `check and rectify the above code, check for any potential errors and fix it. remove any html, CSS or JavaScript comments. remove all the comments strictly. check that all CSS properties are valid else fix it, check all html tags and attributes are proper and no attribute is mixed with the tag name like:- <pid="paragraph">...</p> is wrong so make it <p id="paragraph">...</p>. In JavaScript check for any functions which are called but not defined:-Example makeGraph() is called somewhere in the entire code but is not made so write the make graph function by understanding the HTML codes context and make it so it works with the integrity of the HTML code without giving rise to another error, check for any syntax error like extra }, ), not using proper syntax etc.`;
 const diagramPrompt = "\n\nCreate a svg code using the above context which is of flat design paradigm, with a suitable background color and if and only if specified in the following then only do animation using either css or native animation tags in svg and if there is animation mentioned after the entire animation sequence is completed it should loop like a gif but strictly do not use animation until it is specified in the following and do not apply style to any element outside the svg like body, head, html etc. or change anything in the :root selector structure your code such that you don't use any class attribute to reference elements in css, work with data-types or ids,therefore create a svg representing the following in it: ";
+const quizPrompt = "Make a quiz of 10 questions on {{}} in which you have many types of quesstion mixed together like mcq(only one correct answer), long(long text answer no options), short(short text answer no answer), mcqms(multiple correct answer), you ahev two flags when designing each question one is drawing which means along with the format of question te user can also submit a sketch as an attachment with the answer, you have another flag which is of diagram in this you can create a svg image following the following criteria, flat design paradigm, with a suitable background color and if and only if needed then only do animation using either css or native animation tags in svg and if there is animation mentioned after the entire animation sequence is completed it should loop like a gif but strictly do not use animation until it is needed and do not apply style to any element outside the svg like body, head, html etc. or change anything in the :root selector structure your code such that you don't use any class attribute or tag names to reference elements in css, work with data-types or ids. if you are choosing to add a svg diagram then provide the svg code only in the diagramSvg part but if the diagram flag is false do not put the diagramSvg key-value pair in the object, but if diagram flag is true then you have to provide it. for long and short answer type question do not put the answer object in data as it is only required for mcq and mcqms. so do not provide options and answer-key strictly"
 const inputType = [
     "button",
     "checkbox",
