@@ -148,7 +148,11 @@ let textToIconMap = {
   "ink":"replay",
   "move": "drag_pan",
   "diagram": "flowchart",
-  "gallery": "folder_data"
+  "gallery": "folder_data",
+  "select": "select",
+  "offeraser": "ink_eraser_off",
+  "unselect":"remove_selection",
+  "scalebob":"lens_blur",
 }
 
 

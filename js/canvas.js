@@ -77,6 +77,8 @@ class CanvasManager {
         // if(!isTouchscreen()){
             this.constraintWindow = new ConstraintDriver(this);
         // }
+        this.selectionInterface = new SelectionInterface(this);
+        // this.selectionInterface.select();
         this.canvasCustomizationInterface = new CanvasCustomizationInterface(this);
     }
 
@@ -268,9 +270,11 @@ class CanvasManager {
                 if((!Array.isArray(boundingBox)) && (boundingBox.circle == false)){
                     let intersect1 = pointToRectangle(boundingBox, gX, gY);
                     let intersect2 = pointToRectangle(boundingBox, gPX, gPY);
+                    // console.log(boundingBox, intersect1, intersect2, rectToCorners(boundingBox))
                     if(intersect1 || intersect2){
                         if((element.shape == "square") || (element.shape == "rectangle")){
-                            collideAble.push([new Point(boundingBox.topX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.topY), i])
+                            // collideAble.push([new Point(boundingBox.topX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.topY), i])
+                            collideAble.push([...rectToCorners(boundingBox), i])
                         }
                         else{
                             let points = [...element.geometryInfo, element.geometryInfo[0], i];
@@ -292,7 +296,7 @@ class CanvasManager {
                 }
             }
         }
-
+        console.log(collideAble)
         for(let element of collideAble){
             let index = element[element.length - 1];
             let first = element[0];
@@ -302,7 +306,7 @@ class CanvasManager {
                 boundingBox.pop();
                 boundingBox = new Stroke(boundingBox).getGlobalBoundingBox();
                 if(Math.abs((boundingBox.topX - boundingBox.bottomX)*(boundingBox.topY - boundingBox.bottomY)) <= ((this.pointEraseTolerance**2)*Math.PI)){
-                    if(ellipseToLine(first.x, first.y, this.pointEraseTolerance*2, this.pointEraseTolerance*2, gX, gY, gPX, gPY)){
+                    if(ellipseToLine(first.x, first.y, this.pointEraseTolerance*2, this.pointEraseTolerance*2, gX, gY, gPX, gPY, 0)){
                         collided = true;
                     }
                 }
@@ -311,7 +315,8 @@ class CanvasManager {
                         let point1 = element[i];
                         let point2 = element[i + 1];
                         let intersect = lineToLine(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY);
-                        // console.log(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY)
+                        console.log(point1.x, point1.y, point2.x, point2.y, gX, gY, gPX, gPY)
+                        console.log(intersect)
                         if(intersect){
                             // new Stroke([new Point(point1.x, point1.y), new Point(point2.x, point2.y)], Canvas.canvasCtx, sp, false, Canvas).drawStroke();
                             collided = true;
@@ -325,7 +330,7 @@ class CanvasManager {
                     this.render();
                 }
             }
-            else if(ellipseToLine(first.x, first.y, first.rx, first.ry, gX, gY, gPX, gPY)){
+            else if(ellipseToLine(first.x, first.y, first.rx, first.ry, gX, gY, gPX, gPY, (Math.PI/180)*(90 - first.rotation))){
                 let graphic = this.strokes.splice(index, 1);
                 this.redoQueue.push(graphic);
                 this.render();
@@ -429,6 +434,362 @@ class CanvasManager {
         else{
             return false;
         }
+    }
+}
+
+class SelectionInterface{
+    constructor(manager){
+        this.manager = manager;
+        this.selectionWindow = document.createElement("div");
+        this.selectionWindow.classList.add("selectionWindow")
+        this.manager.parent.appendChild(this.selectionWindow)
+        this.canSelect = false;
+        this.canTransform = false;
+        this.selectedObjects = [];
+        this.scaleBob = document.createElement("button");
+        this.scaleBob.classList.add("scaleBob");
+        this.scaleBob.innerText = "scalebob";
+        this.initialEditorConfig = {
+            translation:new Point(0, 0),
+            scaleFactor:1,
+            aspectRatioWbyH:1,
+            rotation:0,
+            deltaRotation: 0
+        };
+        this.editorContainer = document.createElement("div");
+        this.editorContainer.classList.add("editorContainer");
+        this.editorContainer.appendChild(this.scaleBob);
+        this.selectionWindow.appendChild(this.editorContainer)
+        this.selectionWindow.addEventListener("mousedown", (e) => {
+            manager.render();
+            if((this.initialClick == null) && !this.canTransform){
+                this.initialClick = new Point(e.x, e.y);
+            }
+        })
+        this.selectionWindow.addEventListener("mousemove", (e) => {
+            if((this.initialClick != null) && !this.canTransform){
+                let arr = this.shortlist(e.x, e.y);
+                this.selectedObjects = arr;
+                manager.render();
+                for(let o of this.selectedObjects){
+                    let boundingBox = o.getGlobalBoundingBox(true);
+                    this.manager.canvasCtx.strokeStyle = "#00ff00";
+                    this.manager.canvasCtx.fillStyle = "#00000000";
+                    this.manager.canvasCtx.lineWidth = 2;
+                    this.manager.canvasCtx.lineCap = "round";
+                    this.manager.canvasCtx.lineJoin = "round";
+                    this.manager.canvasCtx.beginPath();
+                    this.manager.canvasCtx.rect(boundingBox.topX + this.manager.translation.x, boundingBox.topY + this.manager.translation.y, boundingBox.bottomX - boundingBox.topX, boundingBox.bottomY - boundingBox.topY)
+                    this.manager.canvasCtx.stroke();
+                }
+            }
+        })
+        this.selectionWindow.addEventListener("mouseup", () => {
+            // this.initialClick = null;
+            // console.log(this.selectedObjects);
+            if(this.selectedObjects.length === 0){
+                this.unselect();
+                return;
+            }
+            if(!this.canTransform){
+                this.editorContainer.classList.add("active");
+                let boundingBox = boundingRectangle(this.selectedObjects.map(e => e.getGlobalBoundingBox(true)));
+                console.log(boundingBox)
+                this.editorContainer.style.top = (boundingBox.topY + boundingBox.bottomY)/2 + "px";
+                this.editorContainer.style.left = (boundingBox.topX + boundingBox.bottomX)/2 + "px";
+                this.editorContainer.style.width = (boundingBox.bottomX - boundingBox.topX) + "px";
+                this.editorContainer.style.height = (boundingBox.bottomY - boundingBox.topY) + "px";
+                this.initialEditorConfig.translation.x = (boundingBox.topX + boundingBox.bottomX)/2;
+                this.initialEditorConfig.translation.y = (boundingBox.topY + boundingBox.bottomY)/2;
+                this.initialEditorConfig.aspectRatioWbyH = this.editorContainer.offsetWidth/this.editorContainer.offsetHeight;
+                this.initialEditorConfig.t = Math.atan(this.editorContainer.offsetWidth/this.editorContainer.offsetHeight);
+            }
+            this.canTransform = true;
+        })
+        let initialDelta = new Point(0, 0)
+        let canMove = false;
+        this.editorContainer.addEventListener("mousedown", (e) => {
+            initialDelta.x = e.x - this.editorContainer.offsetLeft;
+            initialDelta.y = e.y - this.editorContainer.offsetTop;
+            canMove = true;
+        })
+
+        this.editorContainer.addEventListener("mousemove", (e) => {
+            if (canMove) {
+                this.editorContainer.style.left = (e.x - initialDelta.x) + "px";
+                this.editorContainer.style.top = (e.y - initialDelta.y) + "px";
+                for(let object of this.selectedObjects){
+                    this.transform(object);
+                }
+                this.manager.render();
+                this.initialEditorConfig.translation.x = this.editorContainer.offsetLeft;
+                this.initialEditorConfig.translation.y = this.editorContainer.offsetTop;
+            }
+        })
+        this.selectionWindow.addEventListener("mousemove", (e)=> {
+            if (canScale) {
+                let d = dist(this.editorContainer.offsetLeft, this.editorContainer.offsetTop, e.x, e.y);
+                let t = this.initialEditorConfig.t;
+                this.initialEditorConfig.scaleFactor = (2*d*Math.sin(t))/this.editorContainer.offsetWidth;
+                // this.editorContainer.style.width = e.x - this.editorContainer.offsetLeft + this.editorContainer.offsetWidth/2 + "px";
+                // this.editorContainer.style.height = this.editorContainer.offsetWidth/this.initialEditorConfig.aspectRatioWbyH + "px";
+                this.editorContainer.style.width = 2*d*Math.sin(t) + "px";
+                this.editorContainer.style.height = 2*d*Math.cos(t) + "px";
+                // this.editorContainer.style.rotate = (Math.atan((this.editorContainer.offsetTop - e.y)/(e.x - this.editorContainer.offsetLeft)) + Math.atan(this.editorContainer.offsetWidth/this.editorContainer.offsetHeight)*3/4)*(-1) + "rad";
+                if(this.editorContainer.offsetWidth > (this.scaleBob.offsetWidth + 20)){
+                    let degrees = this.getRotationDegrees(this.editorContainer, new Point(e.x, e.y));
+                    this.initialEditorConfig.deltaRotation = this.initialEditorConfig.rotation - degrees;
+                    this.initialEditorConfig.rotation = degrees;
+                    this.editorContainer.style.rotate = degrees + "deg";
+                    for(let object of this.selectedObjects){
+                        this.transform(object, false);
+                    }
+                }
+                else{
+
+                }
+                console.log(this.editorContainer.offsetWidth);
+                this.manager.render();
+            }
+        })
+        this.selectionWindow.addEventListener("mouseup", () => {
+            canMove = false;
+            canScale = false;
+        })
+        this.selectionWindow.addEventListener("mouseleave", () => {
+            canMove = false;
+            canScale = false;
+        })
+
+        this.editorContainer.addEventListener("mouseup", () => {
+            canMove = false;
+            canScale = false;
+        })
+
+        this.editorContainer.addEventListener("mouseleave", () => {
+            canMove = false;
+            // canScale = false;
+        })
+        let canScale = false;
+        this.scaleBob.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            canMove = false;
+            canScale = true;
+        })
+        this.scaleBob.addEventListener("mousemove", (e) => {
+            // e.stopPropagation();
+        })
+        this.scaleBob.addEventListener("mouseup", (e) => {
+            // e.stopPropagation();
+        })
+        this.initialClick = null;
+    }
+
+    select(){
+        this.canSelect = true;
+        this.selectionWindow.classList.add("active");
+        // this.editorContainer.classList.add("active");
+        this.initialClick = null;
+        this.canTransform = false;
+    }
+
+    shortlist(x, y){
+        let selectedArray = [];
+        let allObjects = this.manager.strokes;
+        let currentRect = {
+            topX:Math.min(x - this.manager.translation.x, this.initialClick.x - this.manager.translation.x),
+            topY:Math.min(y - this.manager.translation.y, this.initialClick.y - this.manager.translation.y),
+            bottomX:Math.max(x - this.manager.translation.x, this.initialClick.x - this.manager.translation.x),
+            bottomY:Math.max(y - this.manager.translation.y, this.initialClick.y - this.manager.translation.y)
+        }
+        for(let object of allObjects){
+            let boundingBox = object.getGlobalBoundingBox(true);
+            if(rectangleOverlap(boundingBox, currentRect)){
+                selectedArray.push(object);
+            }
+        }
+        return selectedArray;
+    }
+
+    getRotationDegrees(element, mousePosition){
+        // 1. Get the position and dimensions of the box on the screen
+            const rect = element.getBoundingClientRect();
+
+            // 2. Calculate the absolute center coordinates of the box
+            const boxCenterX = rect.left + rect.width / 2;
+            const boxCenterY = rect.top + rect.height / 2;
+
+            // 3. Calculate the vector from the center to the mouse
+            const dx = mousePosition.x - boxCenterX;
+            const dy = mousePosition.y - boxCenterY;
+
+            // 4. Calculate the angle of that vector in radians
+            let radians = Math.atan2(dy, dx);
+            radians -= Math.PI/2 - this.initialEditorConfig.t;
+            // 5. Convert radians to degrees
+            let degrees = radians * (180 / Math.PI);
+            // 6. Normalize the angle to be between 0 and 360
+            if (degrees < 0) {
+                degrees += 360;
+            }
+
+            return degrees;
+    }
+
+    rotate(iP){
+        let t = new Point(-1*this.editorContainer.offsetLeft, -1*this.editorContainer.offsetTop);
+        let T = new Point(this.manager.translation.x, this.manager.translation.y);
+        let toRotate = new Point(iP.x + T.x + t.x, iP.y + T.y + t.y);
+        let theta = this.initialEditorConfig.deltaRotation;
+        theta *= Math.PI/180;
+        let cos = Math.cos(theta);
+        let sin = Math.sin(theta);
+        let rotatedX = cos*toRotate.x + sin*toRotate.y;
+        let rotatedY = cos*toRotate.y - sin*toRotate.x;
+        rotatedX -= T.x + t.x;
+        rotatedY -= T.y + t.y;
+        return new Point(rotatedX, rotatedY);
+    }
+
+    transform(element, translate = true){
+        if(!translate){
+            if(element instanceof Stroke){
+                for(let point of element.points){
+                    point.x = this.initialEditorConfig.scaleFactor*point.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
+                    point.y = this.initialEditorConfig.scaleFactor*point.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
+                    let rotated = this.rotate(point);
+                    point.x = rotated.x;
+                    point.y = rotated.y;
+                }
+                return;
+            }
+            switch (element.shape) {
+                case "line":
+                    for(let point of element.geometryInfo){
+                        point.x = this.initialEditorConfig.scaleFactor*point.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
+                        point.y = this.initialEditorConfig.scaleFactor*point.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
+                        let rotated = this.rotate(point);
+                        point.x = rotated.x;
+                        point.y = rotated.y;
+                    }
+                    break;
+                case "triangle":
+                    for(let point of element.geometryInfo){
+                        point.x = this.initialEditorConfig.scaleFactor*point.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
+                        point.y = this.initialEditorConfig.scaleFactor*point.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
+                        let rotated = this.rotate(point);
+                        point.x = rotated.x;
+                        point.y = rotated.y;
+                    }
+                    break;
+                case "freeShape":
+                    for(let point of element.geometryInfo){
+                        point.x = this.initialEditorConfig.scaleFactor*point.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
+                        point.y = this.initialEditorConfig.scaleFactor*point.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
+                        let rotated = this.rotate(point);
+                        point.x = rotated.x;
+                        point.y = rotated.y;
+                    }
+                    break;
+                case "circle":
+                    element.geometryInfo.x = this.initialEditorConfig.scaleFactor*element.geometryInfo.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
+                    element.geometryInfo.y = this.initialEditorConfig.scaleFactor*element.geometryInfo.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
+                    element.geometryInfo.rx *= this.initialEditorConfig.scaleFactor;
+                    element.geometryInfo.ry *= this.initialEditorConfig.scaleFactor;
+                    element.geometryInfo.distance = dist(0, 0, element.geometryInfo.rx, element.geometryInfo.ry);
+                    element.geometryInfo.rotation -= this.initialEditorConfig.deltaRotation;
+                    let rotated1 = this.rotate(new Point(element.geometryInfo.x, element.geometryInfo.y));
+
+                    element.geometryInfo.x = rotated1.x;
+                    element.geometryInfo.y = rotated1.y;
+                    break;
+                case "square":
+                    element.geometryInfo.x = this.initialEditorConfig.scaleFactor*element.geometryInfo.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
+                    element.geometryInfo.y = this.initialEditorConfig.scaleFactor*element.geometryInfo.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
+                    element.geometryInfo.side *= this.initialEditorConfig.scaleFactor;
+                    element.geometryInfo.rotation -= this.initialEditorConfig.deltaRotation;
+                    // let rotated2 = this.rotate(new Point(element.geometryInfo.x, element.geometryInfo.y));
+
+                    // element.geometryInfo.x = rotated2.x;
+                    // element.geometryInfo.y = rotated2.y;
+                    break;
+                case "rectangle":
+                    element.geometryInfo.x = this.initialEditorConfig.scaleFactor*element.geometryInfo.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
+                    element.geometryInfo.y = this.initialEditorConfig.scaleFactor*element.geometryInfo.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
+                    element.geometryInfo.width *= this.initialEditorConfig.scaleFactor;
+                    element.geometryInfo.height *= this.initialEditorConfig.scaleFactor;
+                    element.geometryInfo.rotation -= this.initialEditorConfig.deltaRotation;
+                    let rotated3 = this.rotate(new Point(element.geometryInfo.x, element.geometryInfo.y));
+
+                    element.geometryInfo.x = rotated3.x;
+                    element.geometryInfo.y = rotated3.y;
+                    break;
+            
+                default:
+                    break;
+            }
+        }
+        else{
+            if(element instanceof Stroke){
+                for(let point of element.points){
+                    point.x += this.editorContainer.offsetLeft - this.initialEditorConfig.translation.x;
+                    point.y += this.editorContainer.offsetTop - this.initialEditorConfig.translation.y;
+                }
+                return;
+            }
+            switch (element.shape) {
+                case "line":
+                    for(let point of element.geometryInfo){
+                        point.x += this.editorContainer.offsetLeft - this.initialEditorConfig.translation.x;
+                        point.y += this.editorContainer.offsetTop - this.initialEditorConfig.translation.y;
+                    }
+                    break;
+                case "triangle":
+                    for(let point of element.geometryInfo){
+                        point.x += this.editorContainer.offsetLeft - this.initialEditorConfig.translation.x;
+                        point.y += this.editorContainer.offsetTop - this.initialEditorConfig.translation.y;
+                    }
+                    break;
+                case "freeShape":
+                    for(let point of element.geometryInfo){
+                        point.x += this.editorContainer.offsetLeft - this.initialEditorConfig.translation.x;
+                        point.y += this.editorContainer.offsetTop - this.initialEditorConfig.translation.y;
+                    }
+                    break;
+                case "circle":
+                    element.geometryInfo.x += this.editorContainer.offsetLeft - this.initialEditorConfig.translation.x;
+                    element.geometryInfo.y += this.editorContainer.offsetTop - this.initialEditorConfig.translation.y;                    
+                    break;
+                case "square":
+                    element.geometryInfo.x += this.editorContainer.offsetLeft - this.initialEditorConfig.translation.x;
+                    element.geometryInfo.y += this.editorContainer.offsetTop - this.initialEditorConfig.translation.y;
+                    break;
+                case "rectangle":
+                    element.geometryInfo.x += this.editorContainer.offsetLeft - this.initialEditorConfig.translation.x;
+                    element.geometryInfo.y += this.editorContainer.offsetTop - this.initialEditorConfig.translation.y;
+                    break;
+            
+                default:
+                    break;
+            }
+        }
+    }
+
+    unselect(){
+        this.canSelect = false;
+        this.selectionWindow.classList.remove("active")
+        this.editorContainer.classList.remove("active")
+        this.initialClick = null;
+        this.canTransform = false;
+        this.editorContainer.style.rotate = "0deg";
+        this.initialEditorConfig = {
+            translation:new Point(0, 0),
+            scaleFactor:1,
+            aspectRatioWbyH:1,
+            rotation:0,
+            deltaRotation: 0
+        }
+        this.manager.render();
     }
 }
 
@@ -567,13 +928,20 @@ class Shape{
         }
         canvasCtx.stroke();
         canvasCtx.fill();
+        canvasCtx.restore();
     }
 
-    getGlobalBoundingBox(){
+    getGlobalBoundingBox(selectionDriver = false){
         switch (this.shape) {
             case "line":
+                if(selectionDriver){
+                    return new Stroke(this.geometryInfo, this.canvasCtx, this.shapeProperties, false, this.manager).getGlobalBoundingBox();
+                }
                 return this.geometryInfo;
             case "triangle":
+                if (selectionDriver) {
+                    return new Stroke(this.geometryInfo, this.canvasCtx, this.shapeProperties, true, this.manager).getGlobalBoundingBox();
+                }
                 return this.geometryInfo;
             case "freeShape":
                 let topX = Math.min(...this.geometryInfo.map(e => e.x));
@@ -582,15 +950,18 @@ class Shape{
                 let bottomY = Math.max(...this.geometryInfo.map(e => e.y))
                 return {topX, topY, bottomX, bottomY, circle:false};
             case "circle":
+                if (selectionDriver) {
+                    return calculateRotatedEllipseBounds(this.geometryInfo.x, this.geometryInfo.y, this.geometryInfo.rx, this.geometryInfo.ry, (Math.PI/180)*(90 - this.geometryInfo.rotation));
+                }
                 return {geometryInfo:this.geometryInfo, circle:true};
             case "square":
                 let sX1 = this.geometryInfo.x; // x coordinate
                 let sY1 = this.geometryInfo.y; // y coordinate
                 let sX2 = sX1 + this.geometryInfo.side; // Side
                 let sY2 = sY1 + (this.geometryInfo.signY*Math.abs(this.geometryInfo.side)); // Side
-                return {topX:Math.min(sX1, sX2), topY:Math.min(sY1, sY2), bottomX:Math.max(sX1, sX2), bottomY:Math.max(sY1, sY2), circle:false};
+                return {topX:Math.min(sX1, sX2), topY:Math.min(sY1, sY2), bottomX:Math.max(sX1, sX2), bottomY:Math.max(sY1, sY2),rotation:this.geometryInfo.rotation,  circle:false};
             case "rectangle":
-                return {topX:this.geometryInfo.x, topY:this.geometryInfo.y, bottomX:this.geometryInfo.x + this.geometryInfo.width, bottomY: this.geometryInfo.y + this.geometryInfo.height, circle:false};
+                return {topX:this.geometryInfo.x, topY:this.geometryInfo.y, bottomX:this.geometryInfo.x + this.geometryInfo.width, bottomY: this.geometryInfo.y + this.geometryInfo.height,rotation:this.geometryInfo.rotation,circle:false};
             default:
                 break;
         }
@@ -602,7 +973,7 @@ class Shape{
         const y = this.geometryInfo.y + this.manager.translation.y; // y coordinate
         const radiusX = this.geometryInfo.rx; // Arc radius
         const radiusY = this.geometryInfo.ry; // Arc radius
-        const rotation = this.geometryInfo.rotation;
+        const rotation = (Math.PI/180)*(90 + this.geometryInfo.rotation);
         const startAngle = 0; // Starting point on circle
         const endAngle = Math.PI * 2; // End point on circle;
         canvasCtx.ellipse(x, y, radiusX, radiusY, rotation, startAngle, endAngle)
@@ -610,20 +981,27 @@ class Shape{
 
     square(canvasCtx = this.canvasCtx){
         canvasCtx.beginPath();
+        canvasCtx.save();
         const x = this.geometryInfo.x + this.manager.translation.x; // x coordinate
         const y = this.geometryInfo.y + this.manager.translation.y; // y coordinate
         const side = this.geometryInfo.side; // Side
         const signY = this.geometryInfo.signY; // Side
-        canvasCtx.rect(x, y, side, signY*Math.abs(side));
+        canvasCtx.translate(x + side/2, y + signY*Math.abs(side)/2)
+        canvasCtx.rotate((Math.PI/180)*(this.geometryInfo.rotation))
+        canvasCtx.rect(-1*side/2, -1*signY*Math.abs(side)/2, side, signY*Math.abs(side));
+
     }
 
     rectangle(canvasCtx = this.canvasCtx){
         canvasCtx.beginPath();
+        canvasCtx.save();
         const x = this.geometryInfo.x + this.manager.translation.x; // x coordinate
         const y = this.geometryInfo.y + this.manager.translation.y; // y coordinate
         const height = this.geometryInfo.height; // height
         const width = this.geometryInfo.width; // width
-        canvasCtx.rect(x, y, width, height);
+        canvasCtx.translate(x + width/2, y + height/2);
+        canvasCtx.rotate((Math.PI/180)*(this.geometryInfo.rotation))
+        canvasCtx.rect(-1*width/2, -1*height/2, width, height);
     }
 
     endFreeShape(){
@@ -753,8 +1131,8 @@ class geometryInfoGenerator{
                 geometryInfo = {
                     x:this.beginPoint.x,
                     y:this.beginPoint.y,
-                    rx: rx,
-                    ry: ry,
+                    rx: ry,
+                    ry: rx,
                     distance: dist(0, 0, rx, ry),
                     rotation:0
                 }
@@ -765,7 +1143,8 @@ class geometryInfoGenerator{
                     x: this.beginPoint.x,
                     y: this.beginPoint.y,
                     side: this.endPoint.x - this.beginPoint.x,
-                    signY: Math.sign(this.endPoint.y - this.beginPoint.y)
+                    signY: Math.sign(this.endPoint.y - this.beginPoint.y),
+                    rotation:0
                 }
                 break;
             case "rectangle":
@@ -773,7 +1152,8 @@ class geometryInfoGenerator{
                     x: Math.min(this.beginPoint.x, this.endPoint.x),
                     y: Math.min(this.beginPoint.y, this.endPoint.y),
                     width: Math.abs(this.beginPoint.x - this.endPoint.x),
-                    height: Math.abs(this.beginPoint.y - this.endPoint.y)
+                    height: Math.abs(this.beginPoint.y - this.endPoint.y),
+                    rotation:0
                 }
                 break;
             default:
@@ -1527,42 +1907,57 @@ function dist(x1, y1, x2, y2){
     return Math.sqrt(dx**2 + dy**2);
 }
 
-function ellipseToLine(cx, cy, rx, ry, x0, y0, x1, y1) {
-  let dx = x1 - x0;
-  let dy = y1 - y0;
-
-  // Check if both points are inside ellipse
-  let p0Inside = pointInsideEllipse(cx, cy, rx, ry, x0, y0);
-  let p1Inside = pointInsideEllipse(cx, cy, rx, ry, x1, y1);
-
-  if (p0Inside && p1Inside) {
-    // both inside — no circumference collision
-    return false;
+function ellipseToLine(cx, cy, rx, ry, x0, y0, x1, y1, angle) {
+  // rotate helper
+  function rotatePoint(px, py, cx, cy, angle) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const dx = px - cx;
+    const dy = py - cy;
+    return {
+      x: dx * cos + dy * sin + cx,
+      y: -dx * sin + dy * cos + cy
+    };
   }
 
-  // Check discriminant for intersection
+  // Rotate both endpoints into ellipse's local frame
+  let p0 = rotatePoint(x0, y0, cx, cy, -angle);
+  let p1 = rotatePoint(x1, y1, cx, cy, -angle);
+
+  let dx = p1.x - p0.x;
+  let dy = p1.y - p0.y;
+
+  // Check if both points are inside rotated ellipse
+  let p0Inside = pointInsideEllipse(cx, cy, rx, ry, p0.x, p0.y);
+  let p1Inside = pointInsideEllipse(cx, cy, rx, ry, p1.x, p1.y);
+
+  if (p0Inside && p1Inside) {
+    return false; // both inside → no circumference collision
+  }
+
+  // Quadratic coefficients in local space
   let A = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
-  let B = 2 * ((dx * (x0 - cx)) / (rx * rx) + (dy * (y0 - cy)) / (ry * ry));
-  let C = ((x0 - cx) * (x0 - cx)) / (rx * rx) + ((y0 - cy) * (y0 - cy)) / (ry * ry) - 1;
+  let B = 2 * ((dx * (p0.x - cx)) / (rx * rx) + (dy * (p0.y - cy)) / (ry * ry));
+  let C =
+    ((p0.x - cx) * (p0.x - cx)) / (rx * rx) +
+    ((p0.y - cy) * (p0.y - cy)) / (ry * ry) -
+    1;
 
   let discriminant = B * B - 4 * A * C;
 
   if (discriminant < 0) {
-    // no intersection
-    return false;
+    return false; // no intersection
   }
 
-  // optional: check t values if you care about segment-only intersection
   let sqrtD = Math.sqrt(discriminant);
   let t1 = (-B + sqrtD) / (2 * A);
   let t2 = (-B - sqrtD) / (2 * A);
 
-  // Check if intersection happens within line segment
+  // Check if intersection is within segment
   if ((0 <= t1 && t1 <= 1) || (0 <= t2 && t2 <= 1)) {
     return true;
   }
 
-  // else no circumference collision
   return false;
 }
 
@@ -1570,6 +1965,42 @@ function pointInsideEllipse(cx, cy, rx, ry, px, py) {
   let dx = px - cx;
   let dy = py - cy;
   return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1;
+}
+
+// function calculateRotatedEllipseBounds(xc, yc, a, b, angleInRadians) {
+//   const cosTheta = Math.cos(angleInRadians);
+//   const sinTheta = Math.sin(angleInRadians);
+
+//   // Half-width and half-height of the bounding box
+//   const halfWidth = Math.hypot(a * cosTheta, b * sinTheta);
+//   const halfHeight = Math.hypot(a * sinTheta, b * cosTheta);
+
+//   // Minimum and maximum coordinates
+//   const minX = xc - halfWidth;
+// //   const maxX = xc + halfWidth;
+//   const minY = yc - halfHeight;
+// //   const maxY = yc + halfHeight;
+
+//   return {
+//     topX: minX,
+//     topY: minY,
+//     bottomX:minX + halfWidth * 2,
+//     bottomY:minY + halfHeight * 2
+//   };
+// }
+function calculateRotatedEllipseBounds(cx, cy, rx, ry, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  const dx = Math.sqrt((rx * cos) ** 2 + (ry * sin) ** 2);
+  const dy = Math.sqrt((rx * sin) ** 2 + (ry * cos) ** 2);
+
+  return {
+    topX: cx - dx,
+    bottomX: cx + dx,
+    topY: cy - dy,
+    bottomY: cy + dy,
+  };
 }
 
 // function lineToLine(p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y) {
@@ -1605,25 +2036,91 @@ function lineToLine(a,b,c,d,p,q,r,s) {
   }
 };
 
-function lineToRectangle(rectInfo, x1, y1, x2, y2){
-    let top = lineToLine(rectInfo.topX, rectInfo.topY, rectInfo.bottomX, rectInfo.topY, x1, y1, x2, y2);
-    let left = lineToLine(rectInfo.topX, rectInfo.topY, rectInfo.topX, rectInfo.bottomY, x1, y1, x2, y2);
-    let bottom = lineToLine(rectInfo.topX, rectInfo.bottomY, rectInfo.bottomX, rectInfo.bottomY, x1, y1, x2, y2);
-    let right = lineToLine(rectInfo.bottomX, rectInfo.topY, rectInfo.bottomX, rectInfo.bottomY, x1, y1, x2, y2);
-    return (top || left) || (bottom || right);
+function pointToRectangle(rectInfo, px, py){
+    // console.log(rectInfo)
+    let { topX, topY, bottomX, bottomY, rotation } = rectInfo;
+    if (rotation == null) {
+        rotation = 0
+    }
+    rotation *= Math.PI/180;
+  // Rectangle center and dimensions
+  const cx = (topX + bottomX) / 2;
+  const cy = (topY + bottomY) / 2;
+  const w = Math.abs(bottomX - topX);
+  const h = Math.abs(bottomY - topY);
+
+  // Translate point relative to center
+  const dx = px - cx;
+  const dy = py - cy;
+
+  // Rotate point back by -rotation
+  const cos = Math.cos(-rotation);
+  const sin = Math.sin(-rotation);
+
+  const localX = dx * cos - dy * sin;
+  const localY = dx * sin + dy * cos;
+
+  // Check if inside axis-aligned rectangle in local coordinates
+  return Math.abs(localX) <= w / 2 && Math.abs(localY) <= h / 2;
 }
 
-function pointToRectangle(rectInfo, x, y){
-    // console.log(rectInfo)
-    let collided = true;
-    if((x < rectInfo.topX) || (x > rectInfo.bottomX)){
-        collided = false;
-    }
-    if((y < rectInfo.topY) || (y > rectInfo.bottomY)){
-        collided = false;
-    }
-    return collided
+function rectangleOverlap(rectA, rectB) {
+    return rectA.topX < rectB.bottomX &&
+           rectA.bottomX > rectB.topX &&
+           rectA.topY < rectB.bottomY &&
+           rectA.bottomY > rectB.topY;
 }
+
+function boundingRectangle(rects) {
+    if (!rects || rects.length === 0) return null;
+
+    let topX = rects[0].topX;
+    let topY = rects[0].topY;
+    let bottomX = rects[0].bottomX;
+    let bottomY = rects[0].bottomY;
+
+    for (let i = 1; i < rects.length; i++) {
+        let r = rects[i];
+        if (r.topX < topX) topX = r.topX;
+        if (r.topY < topY) topY = r.topY;
+        if (r.bottomX > bottomX) bottomX = r.bottomX;
+        if (r.bottomY > bottomY) bottomY = r.bottomY;
+    }
+
+    return { topX, topY, bottomX, bottomY };
+}
+
+function rectToCorners(rectInfo) {
+  const { topX, topY, bottomX, bottomY, rotation } = rectInfo;
+
+  // Rectangle center and dimensions
+  const cx = (topX + bottomX) / 2;
+  const cy = (topY + bottomY) / 2;
+  const w = Math.abs(bottomX - topX);
+  const h = Math.abs(bottomY - topY);
+
+  const hw = w / 2;
+  const hh = h / 2;
+
+  // Define corners relative to center in clockwise order:
+  // top-left, top-right, bottom-right, bottom-left
+  const corners = [
+    { x: -hw, y: -hh }, // top-left
+    { x: hw, y: -hh },  // top-right
+    { x: hw, y: hh },   // bottom-right
+    { x: -hw, y: hh }   // bottom-left
+  ];
+
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+
+  // Rotate each corner and translate back to center
+  return corners.map(p => ({
+    x: cx + p.x * cos - p.y * sin,
+    y: cy + p.x * sin + p.y * cos
+  })).map(p => new Point(p.x, p.y));
+}
+
 
 function ik(a, b, A, B) {
     let C = dist(a.x, a.y, b.x, b.y)
@@ -1710,6 +2207,10 @@ class CanvasCustomizationInterface {
         this.pan.innerText = "Pan";
         this.interfaceWindow.appendChild(this.pan);
 
+        this.select = document.createElement("button");
+        this.select.innerText = "select";
+        this.interfaceWindow.appendChild(this.select);
+
         this.fillTypeArray = ["Stroke", "Fill", "Stroke & Fill"];
         this.fillType = 0;
 
@@ -1722,6 +2223,19 @@ class CanvasCustomizationInterface {
         this.interfaceWindow.appendChild(this.thicknessSlider)
         manager.parent.appendChild(this.interfaceWindow);
         manager.parent.appendChild(this.interfaceWindowBackdrop);
+
+        this.select.addEventListener("click", () => {
+            this.manager.selectionInterface.select()
+            if(this.touchscreenInterface){
+                this.touchscreenInterface.innerHTML = "";
+                this.touchscreenInterface.innerText = "unselect";
+                // this.pan.querySelector("span").innerText = "do_not_touch"
+                iconify(this.touchscreenInterface)
+            }
+            // this.eraser.querySelector("span").innerText = "remove_selection";
+            this.inactive();
+        })
+
         this.pan.addEventListener("click", () => {
             if(!this.manager.translateInterface.classList.contains("active")){
                 this.manager.translateInterface.classList.add("active");
@@ -1812,6 +2326,8 @@ class CanvasCustomizationInterface {
             if(this.touchscreenInterface){
                 this.touchscreenInterface.querySelector("span").innerText = "ink_eraser_off"
             }
+            // this.eraser.querySelector("span").innerText = "ink_eraser_off";
+            this.inactive();
         })
         this.clear.addEventListener("click", () => {
             this.manager.strokes = listenableArray();
@@ -1899,6 +2415,7 @@ class CanvasCustomizationInterface {
     }
     active(x = 10, y = 10){
         if(!this.activeStatus){
+            this.manager.selectionInterface.unselect();
             this.manager.eraserMode = false;
             if(this.touchscreenInterface){
                 this.touchscreenInterface.innerText = "Tools"
