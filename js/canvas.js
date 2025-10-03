@@ -90,12 +90,18 @@ class CanvasManager {
         if(clear){
             this.clearCanvas();
         }
-        for (let stroke of this.strokes) {
+        for (let strokeIndex in this.strokes) {
+            let stroke = this.strokes[strokeIndex]
             if(stroke instanceof Stroke){
                 stroke.drawStroke(canvasCtx);
             }
             if(stroke instanceof Shape){
-                stroke.drawShape(canvasCtx);
+                if(stroke.geometryInfo == null){
+                    this.strokes.splice(strokeIndex, 1);
+                }
+                else{
+                    stroke.drawShape(canvasCtx);
+                }
             }
         }
     }
@@ -880,6 +886,9 @@ class Shape{
     }
 
     drawShape(canvasCtx = this.canvasCtx){
+        if(this.geometryInfo == null){
+            return;
+        }
         switch (this.shape) {
             case "line":
                 new Stroke(this.geometryInfo, canvasCtx, this.shapeProperties, false, this.manager).drawStroke();
