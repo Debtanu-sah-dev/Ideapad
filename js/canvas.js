@@ -280,7 +280,10 @@ class CanvasManager {
                     if(intersect1 || intersect2){
                         if((element.shape == "square") || (element.shape == "rectangle")){
                             // collideAble.push([new Point(boundingBox.topX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.topY), new Point(boundingBox.bottomX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.bottomY), new Point(boundingBox.topX, boundingBox.topY), i])
-                            collideAble.push([...rectToCorners(boundingBox), i])
+                            console.log(element.geometryInfo);
+                            let corners = rectToCorners(element.convertToStandardForm());
+                            corners.push(corners[0]);
+                            collideAble.push([...corners, i])
                         }
                         else{
                             let points = [...element.geometryInfo, element.geometryInfo[0], i];
@@ -964,16 +967,31 @@ class Shape{
                 }
                 return {geometryInfo:this.geometryInfo, circle:true};
             case "square":
-                let sX1 = this.geometryInfo.x; // x coordinate
-                let sY1 = this.geometryInfo.y; // y coordinate
-                let sX2 = sX1 + this.geometryInfo.side; // Side
-                let sY2 = sY1 + (this.geometryInfo.signY*Math.abs(this.geometryInfo.side)); // Side
-                return {topX:Math.min(sX1, sX2), topY:Math.min(sY1, sY2), bottomX:Math.max(sX1, sX2), bottomY:Math.max(sY1, sY2),rotation:this.geometryInfo.rotation,  circle:false};
+                // let sX1 = this.geometryInfo.x; // x coordinate
+                // let sY1 = this.geometryInfo.y; // y coordinate
+                // let sX2 = sX1 + this.geometryInfo.side; // Side
+                // let sY2 = sY1 + (this.geometryInfo.signY*Math.abs(this.geometryInfo.side)); // Side
+                // return {topX:Math.min(sX1, sX2), topY:Math.min(sY1, sY2), bottomX:Math.max(sX1, sX2), bottomY:Math.max(sY1, sY2),rotation:this.geometryInfo.rotation,  circle:false};
+                return new Stroke(rectToCorners(this.convertToStandardForm())).getGlobalBoundingBox();
             case "rectangle":
-                return {topX:this.geometryInfo.x, topY:this.geometryInfo.y, bottomX:this.geometryInfo.x + this.geometryInfo.width, bottomY: this.geometryInfo.y + this.geometryInfo.height,rotation:this.geometryInfo.rotation,circle:false};
+                return new Stroke(rectToCorners(this.convertToStandardForm())).getGlobalBoundingBox();
             default:
                 break;
         }
+    }
+
+    convertToStandardForm(){
+        if(this.shape == "square"){
+            let sX1 = this.geometryInfo.x; // x coordinate
+            let sY1 = this.geometryInfo.y; // y coordinate
+            let sX2 = sX1 + this.geometryInfo.side; // Side
+            let sY2 = sY1 + (this.geometryInfo.signY*Math.abs(this.geometryInfo.side)); // Side
+            return {topX:Math.min(sX1, sX2), topY:Math.min(sY1, sY2), bottomX:Math.max(sX1, sX2), bottomY:Math.max(sY1, sY2),rotation:(Math.PI/180)*this.geometryInfo.rotation,  circle:false};
+        }
+        if(this.shape == "rectangle"){
+            return {topX:this.geometryInfo.x, topY:this.geometryInfo.y, bottomX:this.geometryInfo.x + this.geometryInfo.width, bottomY: this.geometryInfo.y + this.geometryInfo.height,rotation:(Math.PI/180)*(this.geometryInfo.rotation),circle:false};
+        }
+        return;
     }
 
     circle(canvasCtx = this.canvasCtx){

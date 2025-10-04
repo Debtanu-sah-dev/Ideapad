@@ -373,7 +373,7 @@ export class AI{
         this.imageDataURL.inlineData.data = url[1];
         const result = await model.generateContent([structuredClone(this.imageDataURL), `${this.prompt} ${this.responseInput.value != "" ? ("\nGive importance to the following: " + this.responseInput.value): ""}`]);
         this.response = result.response.text();
-        this.responseText.innerHTML = DOMPurify.sanitize(marked.parse(result.response.text()));
+        this.responseText.innerHTML = DOMPurify.sanitize(marked.parse(result.response.text())).replace(/\[object Object\]/ig, "");
         mathRectify(this.responseText);
         Prism.highlightAllUnder(this.responseText)
     }

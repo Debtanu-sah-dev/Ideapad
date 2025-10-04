@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0">
+	<defs>
+		<filter id="svgfm-filter">
+			<feTurbulence type="turbulence" baseFrequency="0.04 0.1" numOctaves="1" seed="3" stitchTiles="noStitch" result="feTurbulence-699d0d7e"></feTurbulence>
+			<feDisplacementMap in="SourceGraphic" in2="feTurbulence-699d0d7e" scale="34" xChannelSelector="A" yChannelSelector="A" result="feDisplacementMap-84e093a3"></feDisplacementMap>
+			<feMorphology in="feDisplacementMap-84e093a3" operator="dilate" radius="0.2 1"></feMorphology>
+		</filter>
+	</defs>
+</svg>
