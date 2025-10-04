@@ -714,10 +714,10 @@ class SelectionInterface{
                     element.geometryInfo.y = this.initialEditorConfig.scaleFactor*element.geometryInfo.y + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.y - this.editorContainer.offsetTop);
                     element.geometryInfo.side *= this.initialEditorConfig.scaleFactor;
                     element.geometryInfo.rotation -= this.initialEditorConfig.deltaRotation;
-                    // let rotated2 = this.rotate(new Point(element.geometryInfo.x, element.geometryInfo.y));
+                    let rotated2 = this.rotate(new Point(element.geometryInfo.x + element.geometryInfo.side/2, element.geometryInfo.y + element.geometryInfo.signY*Math.abs(element.geometryInfo.side)/2));
 
-                    // element.geometryInfo.x = rotated2.x;
-                    // element.geometryInfo.y = rotated2.y;
+                    element.geometryInfo.x = rotated2.x - element.geometryInfo.side/2;
+                    element.geometryInfo.y = rotated2.y - element.geometryInfo.signY*Math.abs(element.geometryInfo.side)/2;
                     break;
                 case "rectangle":
                     element.geometryInfo.x = this.initialEditorConfig.scaleFactor*element.geometryInfo.x + (this.initialEditorConfig.scaleFactor - 1)*(this.manager.translation.x - this.editorContainer.offsetLeft);
@@ -725,10 +725,10 @@ class SelectionInterface{
                     element.geometryInfo.width *= this.initialEditorConfig.scaleFactor;
                     element.geometryInfo.height *= this.initialEditorConfig.scaleFactor;
                     element.geometryInfo.rotation -= this.initialEditorConfig.deltaRotation;
-                    let rotated3 = this.rotate(new Point(element.geometryInfo.x, element.geometryInfo.y));
+                    let rotated3 = this.rotate(new Point(element.geometryInfo.x + element.geometryInfo.width/2, element.geometryInfo.y + element.geometryInfo.height/2));
 
-                    element.geometryInfo.x = rotated3.x;
-                    element.geometryInfo.y = rotated3.y;
+                    element.geometryInfo.x = rotated3.x - element.geometryInfo.width/2;
+                    element.geometryInfo.y = rotated3.y - element.geometryInfo.height/2;
                     break;
             
                 default:
@@ -2339,10 +2339,17 @@ class CanvasCustomizationInterface {
             this.inactive();
         })
         this.clear.addEventListener("click", () => {
-            this.manager.strokes = listenableArray();
-            this.manager.strokes.addCallback = () => {
-                this.manager.redoQueue = [];
+            // this.manager.strokes = listenableArray();
+            let clearedBuffer = [];
+            let  l = (this.manager.strokes.length - 1);
+            for(let i = l; i >= 0; i--){
+                // console.log(i, this.manager.strokes)
+                clearedBuffer.push(this.manager.strokes.pop());
             }
+            // this.manager.strokes.addCallback = () => {
+            //     this.manager.redoQueue = [];
+            // }
+            this.manager.redoQueue.push(clearedBuffer)
             this.manager.clearCanvas();
         })
 
@@ -2354,7 +2361,16 @@ class CanvasCustomizationInterface {
         })
         this.redo.addEventListener("click", () => {
             if(this.manager.redoAble()){
-                this.manager.strokes.pushNC(this.manager.redoQueue.pop());
+                if(Array.isArray(this.manager.redoQueue[this.manager.redoQueue.length - 1])){
+                    let l =  this.manager.redoQueue[this.manager.redoQueue.length - 1].length - 1;
+                    for(let i = l; i >= 0; i--){
+                        this.manager.strokes.pushNC(this.manager.redoQueue[this.manager.redoQueue.length - 1].pop());
+                    }
+                    this.manager.redoQueue.pop();
+                }
+                else{
+                    this.manager.strokes.pushNC(this.manager.redoQueue.pop());
+                }
                 this.manager.render();
             }
         })
