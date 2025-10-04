@@ -853,7 +853,7 @@ class Stroke {
         }
         canvasCtx.stroke();
     }
-    compress(methods = ["prune", "smooth"]){
+    compress(methods = ["smooth", "prune"]){
         let auxPath = this.points;
         for(let method of methods){
             auxPath = StrokeCompressor[method + "Path"](auxPath);
