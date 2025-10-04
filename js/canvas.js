@@ -1892,7 +1892,7 @@ class StrokeCompressor {
         return StrokeCompressor.prunePath(auxPathArray, depth);
     }
 
-    static smoothPath(path, kernelSize = 100) {
+    static smoothPath(path, kernelSize = 1) {
         if (kernelSize == 0) {
             return path;
         }
