@@ -235,6 +235,52 @@ const inputType = [
     ];
 
     console.log(inputType.length)
+
+class ImageDataBlob{
+  constructor(dataUrl){
+    return {
+            inlineData: {
+              data: dataUrl.split(",")[1],
+              mimeType: "image/png",
+            },
+        }
+  }
+}
+
+async function searchWikimediaImages(description) {
+      // const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(description)}&gsrlimit=12&prop=imageinfo&iiprop=url&format=json&origin=*`;
+      // const res = await fetch(apiUrl);
+      // const data = await res.json();
+      // const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=allimages&gsrsearch=${encodeURIComponent(description)}&gsrnamespace=6&gsrlimit=10&aiprop=url|mime&format=json&origin=*`;
+      // const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(description)}&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime&format=json&origin=*`;
+      // const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(description)}&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime&iiurlwidth=500&format=json&origin=*&iimime=video%2Fmp4%2Capplication%2Fpdf%2Capplication%2Foctet-stream%2Capplication%2Fzip%2Capplication%2Fmsword%2Capplication%2Fvnd.ms-excel%2Capplication%2Fvnd.ms-powerpoint%2Capplication%2Fmsaccess%2Capplication%2Fmsproject%2Capplication%2Fmsword%2Capplication%2Frtf%2Capplication%2Fxml%2Capplication%2Fjson%2Capplication%2Fjavascript%2Capplication%2Fx-shockwave-flash%2Capplication%2Fvnd.ms-excel%2Capplication%2Fvnd.ms-powerpoint%2Capplication%2Fvnd.ms-access%2Capplication%2Fvnd.ms-project%2Capplication%2Fvnd.ms-word%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fx-rtf%2Capplication%2Fx-xml%2Capplication%2Fx-json%2Capplication%2Fx-javascript%2Capplication%2Fx-shockwave-flash%2Capplication%2Fx-ms-excel%2Capplication%2Fx-ms-powerpoint%2Capplication%2Fx-ms-access%2Capplication%2Fx-ms-project%2Capplication%2Fx-ms-word%2Capplication%2Fx-zip-compressed%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication::contentReference[oaicite:10]{index=10}`;
+      const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(description)}&format=json&origin=*`;
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      let urls = [];
+      let pages = [];
+      for(let info of Object.values(data.query.search)){
+          pages.push(info.title)
+      }
+      const apiUrl2 = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(pages.join("|"))}&prop=pageimages&format=json&origin=*&pithumbsize=4999`;
+      const res2 = await fetch(apiUrl2);
+      const data2 = await res2.json();
+for(let info of Object.values(data2.query.pages)){
+  if(info.thumbnail != null){
+    urls.push(info.thumbnail.source)
+  }
+}
+return [pages, urls];
+      // if (!data.query) return [];
+      // const pages = Object.values(data.query.pages);
+      // return data;
+      // return pages
+      //   .map(p => ({
+      //     title: p.title,
+      //     url: p.imageinfo?.[0]?.url
+      //   }))
+      //   .filter(p => !!p.url);
+    }
 export class AI{
     constructor(manager, model, prompt, parent){
         this.manager = manager;
@@ -252,6 +298,7 @@ export class AI{
         this.run = this.run.bind(this);
         this.giveMetaPrompt = this.giveMetaPrompt.bind(this);
         this.createDiagram = this.createDiagram.bind(this);
+        this.createImageQuery = this.createImageQuery.bind(this);
         this.dialog = document.createElement("dialog");
         this.dialog.classList.add("aiDialog");
         this.dialog.setAttribute("closedby", "any");
@@ -261,6 +308,48 @@ export class AI{
         this.diagramDialog.classList.add("diagramDialog");
         this.diagramDialog.setAttribute("closedby", "any");
         this.parent.appendChild(this.diagramDialog);
+        this.imagesDialog = document.createElement("dialog");
+        this.imagesDialog.classList.add("aiDialog");
+        this.imagesDialog.classList.add("imagesDialog");
+        // TO-DO:remove closedby any
+        this.imagesDialog.setAttribute("closedby", "any");
+        this.parent.appendChild(this.imagesDialog);
+        this.canQueryImage = true;
+        this.manager.selectionInterface.imageBob.addEventListener("click", async () => {
+          this.imagesDialog.innerHTML = ""
+          this.imagesDialog.showModal();
+          if(this.canQueryImage){
+            this.canQueryImage = false;
+            let matchingImages = await this.createImageQuery(this.manager.getDataUrlFromSubset(this.manager.selectionInterface.selectedObjects).join(","));
+            this.canQueryImage = true;
+            for(let image of matchingImages[1]){
+              let img = document.createElement("img");
+              img.src = image;
+              img.addEventListener("click", () => {
+                this.imagesDialog.close();
+                let selectedObjects = this.manager.selectionInterface.selectedObjects;
+                let rect = new Shape("rectangle", this.manager.canvasCtx, this.manager.shapeProperties, null, this.manager, image);
+                rect.shapeEditor.killEditor();
+                rect.geometryInfo = {};
+                rect.geometryInfo.rotation = this.manager.selectionInterface.initialEditorConfig.rotation;
+                if(this.manager.selectionInterface.editorContainer.offsetWidth < this.manager.selectionInterface.editorContainer.offsetHeight){
+                  rect.geometryInfo.width = this.manager.selectionInterface.editorContainer.offsetWidth;
+                  rect.geometryInfo.height = this.manager.selectionInterface.editorContainer.offsetWidth*(img.naturalHeight/img.naturalWidth);
+                }
+                else{
+                  rect.geometryInfo.height = this.manager.selectionInterface.editorContainer.offsetHeight;
+                  rect.geometryInfo.width = this.manager.selectionInterface.editorContainer.offsetHeight*(img.naturalWidth/img.naturalHeight);
+                }
+                rect.geometryInfo.x = this.manager.selectionInterface.editorContainer.offsetLeft - this.manager.translation.x - this.manager.selectionInterface.editorContainer.offsetWidth/2;
+                rect.geometryInfo.y = this.manager.selectionInterface.editorContainer.offsetTop - this.manager.translation.y - this.manager.selectionInterface.editorContainer.offsetHeight/2;
+                this.manager.strokes.push(rect)
+                this.manager.render();
+                this.manager.selectionInterface.selectedObjects = [rect];
+              })
+              this.imagesDialog.appendChild(img);
+            }
+          }
+        })
         // this.dialog.addEventListener("blur", () => {
             //     this.dialog.close()
             // })
@@ -391,15 +480,54 @@ export class AI{
         }
     }
 
+    createImageQuery = async (dataurl) => {
+      let getInfo = await this.giveMetaPrompt(false, new ImageDataBlob(dataurl), `
+You are assisting in a reverse image search using Wikimedia Commons.
+
+Your task is to generate search-friendly keywords based on the image.
+The keywords must describe what the image *is* or *represents* — not its colors, emotions, or style.
+
+Follow these exact rules:
+- Only output Wikimedia-compatible search keywords.
+- Focus on what the image depicts, represents, or resembles (e.g. "solar panel", "map", "car engine diagram", "cat", "temple", "galaxy", "city skyline").
+- If it looks like an object, specify which object it is or what class/type of object it could be.
+- If it is a diagram, specify the diagram type (e.g. "circuit diagram", "flowchart", "architecture plan").
+- If it is related to a location, include possible place or landmark type (e.g. "mountain landscape", "Indian temple", "ancient ruins").
+- If it has a distinct context like "logo", "symbol", or "illustration", include that too.
+- Avoid artistic terms, color references, abstract concepts, or descriptions like "beautiful", "dark", or "realistic".
+- Output ONLY a single line of comma-separated keywords, no sentences or explanations.
+- if it is a physics diagram then only tell what part of physics it represent
+- be specific do not give broad keyword if the image shows a parabola then do not give keywords like functions polynomial, instead give keywords like Parabola, quadratic curve etc.
+- think of as if you were to search a similar looking image what would you search
+- If the image is about for example projectile motion then only give, (Projectile Motion, Projectile 2D, Kinematics)
+
+Example outputs:
+- "circuit diagram, resistor network, electronics"
+- "ancient temple, architecture, India"
+- "solar system, planets, astronomy"
+- "human brain, anatomy diagram, neuroscience"
+`);
+      console.log(getInfo)
+      let images = await searchWikimediaImages(getInfo);
+      return images;
+    }
+
     createResponse(){
         this.run();
     }
 
-    giveMetaPrompt = async (mockupMode = false) => {
-        let url = this.manager.getDataUrl();
-        this.responseImage.src = url.join(",");
-        this.imageDataURL.inlineData.data = url[1];
-        const result = await modelFast.generateContent([structuredClone(this.imageDataURL), metaPrompt + (mockupMode? "Along with that explain this image in the view of web design as this is a mockup of a webpage/ web-application as well.":"")]);
+    giveMetaPrompt = async (mockupMode = false, imageBlob = null, prompt) => {
+        let blob = {};
+        if(imageBlob == null){
+          let url = this.manager.getDataUrl();
+          this.responseImage.src = url.join(",");
+          this.imageDataURL.inlineData.data = url[1];
+          blob = structuredClone(this.imageDataURL);
+        }
+        else{
+          blob = imageBlob
+        }
+        const result = await modelFast.generateContent([blob, (prompt == null ? metaPrompt : prompt) + (mockupMode? "Along with that explain this image in the view of web design as this is a mockup of a webpage/ web-application as well.":"")]);
         // console.log(result.response.text())
         return result.response.text();
     }

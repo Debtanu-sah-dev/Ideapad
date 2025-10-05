@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 :root{
+    --primary-color:#8c00fe;
+    --secondary-color:#fe9800;
     --r:0;
     --g:0;
     --b:0;
@@ -44,7 +46,8 @@
     ;
     --box-shadow-outset:1vh 1vh 2vh #00000042; */
     --color-solid:rgb(var(--r), var(--g), var(--b));
-    --backdrop-filter:blur(5px);
+    --backdrop-filter:blur(5px) saturate(100%) contrast(100%);
+    --backdrop-filter-special:blur(2px) brightness(1.1) url(#frosted);
     
     /* --backdrop-filter:url(images/glassdistortion.svg#svgfm-filter); */
     /* --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' version='1.1' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:svgjs='http://svgjs.dev/svgjs' viewBox='0 0 700 700' width='700' height='700' opacity='0.1'%3E%3Cdefs%3E%3Cfilter id='nnnoise-filter' x='-20%25' y='-20%25' width='140%25' height='140%25' filterUnits='objectBoundingBox' primitiveUnits='userSpaceOnUse' color-interpolation-filters='linearRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.123' numOctaves='4' seed='15' stitchTiles='stitch' x='0%25' y='0%25' width='100%25' height='100%25' result='turbulence'%3E%3C/feTurbulence%3E%3CfeSpecularLighting surfaceScale='9' specularConstant='2.3' specularExponent='20' lighting-color='%23ff0000' x='0%25' y='0%25' width='100%25' height='100%25' in='turbulence' result='specularLighting'%3E%3CfeDistantLight azimuth='3' elevation='89'%3E%3C/feDistantLight%3E%3C/feSpecularLighting%3E%3CfeColorMatrix type='saturate' values='0' x='0%25' y='0%25' width='100%25' height='100%25' in='specularLighting' result='colormatrix'%3E%3C/feColorMatrix%3E%3C/filter%3E%3C/defs%3E%3Crect width='700' height='700' fill='%23ffffff00'%3E%3C/rect%3E%3Crect width='700' height='700' fill='%23ff0000' filter='url(%23nnnoise-filter)'%3E%3C/rect%3E%3C/svg%3E"); */
@@ -115,7 +118,7 @@ html{
 .interface{
     background-color: rgba(var(--r), var(--g), var(--b), 0.5);
     background-image: var(--noise);
-    backdrop-filter: var(--backdrop-filter);
+    backdrop-filter: var(--backdrop-filter-special);
     border-radius: 2vh;
     box-shadow:var(--box-shadow);
     position: absolute;
@@ -459,7 +462,7 @@ pre span.token.punctuation {
     background-repeat: no-repeat;
     background-size: 80% 80%;
     background-position: center center;
-    backdrop-filter: var(--backdrop-filter);
+    backdrop-filter: var(--backdrop-filter-special);
     padding: 1vh 1vh;
     background-color: rgba(var(--r), var(--g), var(--b), 0.5);
     display: flex;
@@ -498,7 +501,7 @@ pre span.token.punctuation {
     transition: 0.2s;
 } */
 
-#ai > button:nth-child(4){
+#ai > button:nth-child(5){
     /* opacity: 0;
     transform: scale(0);
     height: initial;
@@ -507,7 +510,7 @@ pre span.token.punctuation {
     /* transition-property: opacity, transform, max-width; */
 }
 
-#ai > button:nth-child(5){
+#ai > button:nth-child(6){
     /* opacity: 0;
     transform: scale(0);
     max-width: 100vmax;
@@ -946,7 +949,7 @@ button{
     border: none;
     outline: none;
     transition: box-shadow 0.2s;
-    backdrop-filter: var(--backdrop-filter);
+    backdrop-filter: var(--backdrop-filter-special);
 }
 
 button:disabled{
@@ -1204,4 +1207,36 @@ textarea{
     bottom: 0;
     cursor:se-resize;
     user-select: none;
+}
+
+.imageBob{
+    position: absolute;
+    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
+    cursor:pointer;
+    user-select: none;
+    /* background-image: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); */
+}
+
+.imageBob > span{
+    /* color: transparent;
+    background-image: linear-gradient(90deg, #f8f8f8, #ffffff85);
+    text-shadow: 0px 0px 4px #ffffff85;
+    background-clip: text; */
+
+}
+
+.imagesDialog:modal{
+    overflow: auto !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr;
+    /* flex-wrap: wrap; */
+}
+.imagesDialog > img{
+    background-color: white;
+    border-radius: 2vh;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }

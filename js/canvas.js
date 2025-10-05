@@ -427,6 +427,133 @@ class CanvasManager {
         return url
     }
 
+    getDataUrlFromSubset(subset){
+        let boundingBox = boundingRectangle(subset.map(e => e.getGlobalBoundingBox(true)));
+        let proxyCanvas = document.createElement("canvas");
+        proxyCanvas.width = boundingBox.bottomX - boundingBox.topX;
+        proxyCanvas.height = boundingBox.bottomY - boundingBox.topY;
+        subset.forEach(element => {
+            if(element instanceof Stroke){
+                for(let point of element.points){
+                    point.x -= boundingBox.topX;
+                    point.y -= boundingBox.topY;
+                }
+                return;
+            }
+            switch (element.shape) {
+                case "line":
+                    for(let point of element.geometryInfo){
+                        point.x -= boundingBox.topX;
+                        point.y -= boundingBox.topY;
+                    }
+                    break;
+                case "triangle":
+                    for(let point of element.geometryInfo){
+                        point.x -= boundingBox.topX;
+                        point.y -= boundingBox.topY;
+                    }
+                    break;
+                case "freeShape":
+                    for(let point of element.geometryInfo){
+                        point.x -= boundingBox.topX;
+                        point.y -= boundingBox.topY;
+                    }
+                    break;
+                case "circle":
+                    element.geometryInfo.x -= boundingBox.topX;
+                    element.geometryInfo.y -= boundingBox.topY;                    
+                    break;
+                case "square":
+                    element.geometryInfo.x -= boundingBox.topX;
+                    element.geometryInfo.y -= boundingBox.topY;
+                    break;
+                case "rectangle":
+                    element.geometryInfo.x -= boundingBox.topX;
+                    element.geometryInfo.y -= boundingBox.topY;
+                    break;
+            
+                default:
+                    break;
+            }
+        })
+        let ctx = proxyCanvas.getContext("2d");
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-solid');
+        ctx.rect(0, 0, proxyCanvas.width, proxyCanvas.height)
+        ctx.fill();
+        for (let strokeIndex in subset) {
+            let stroke = subset[strokeIndex]
+            if(stroke instanceof Stroke){
+                stroke.drawStroke(ctx);
+            }
+            if(stroke instanceof Shape){
+                if(stroke.geometryInfo == null){
+                    subset.splice(strokeIndex, 1);
+                }
+                else{
+                    stroke.drawShape(ctx);
+                }
+            }
+        }
+        const imageData = ctx.getImageData(0, 0, proxyCanvas.width, proxyCanvas.height);
+        const data = imageData.data;
+
+        for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) { // Check if alpha is transparent
+            data[i] = 255;        // Set Red to white
+            data[i + 1] = 255;    // Set Green to white
+            data[i + 2] = 255;    // Set Blue to white
+        }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        let url = proxyCanvas.toDataURL().split(",");
+        subset.forEach(element => {
+            if(element instanceof Stroke){
+                for(let point of element.points){
+                    point.x += boundingBox.topX;
+                    point.y += boundingBox.topY;
+                }
+                return;
+            }
+            switch (element.shape) {
+                case "line":
+                    for(let point of element.geometryInfo){
+                        point.x += boundingBox.topX;
+                        point.y += boundingBox.topY;
+                    }
+                    break;
+                case "triangle":
+                    for(let point of element.geometryInfo){
+                        point.x += boundingBox.topX;
+                        point.y += boundingBox.topY;
+                    }
+                    break;
+                case "freeShape":
+                    for(let point of element.geometryInfo){
+                        point.x += boundingBox.topX;
+                        point.y += boundingBox.topY;
+                    }
+                    break;
+                case "circle":
+                    element.geometryInfo.x += boundingBox.topX;
+                    element.geometryInfo.y += boundingBox.topY;                    
+                    break;
+                case "square":
+                    element.geometryInfo.x += boundingBox.topX;
+                    element.geometryInfo.y += boundingBox.topY;
+                    break;
+                case "rectangle":
+                    element.geometryInfo.x += boundingBox.topX;
+                    element.geometryInfo.y += boundingBox.topY;
+                    break;
+            
+                default:
+                    break;
+            }
+        })
+        return url
+    }
+
     undoAble(){
         if(this.strokes.length !== 0){
             return true;
@@ -458,6 +585,9 @@ class SelectionInterface{
         this.scaleBob = document.createElement("button");
         this.scaleBob.classList.add("scaleBob");
         this.scaleBob.innerText = "scalebob";
+        this.imageBob = document.createElement("button");
+        this.imageBob.classList.add("imageBob");
+        this.imageBob.innerText = "imagebob";
         this.initialEditorConfig = {
             translation:new Point(0, 0),
             scaleFactor:1,
@@ -468,6 +598,7 @@ class SelectionInterface{
         this.editorContainer = document.createElement("div");
         this.editorContainer.classList.add("editorContainer");
         this.editorContainer.appendChild(this.scaleBob);
+        this.editorContainer.appendChild(this.imageBob);
         this.selectionWindow.appendChild(this.editorContainer)
         this.selectionWindow.addEventListener("mousedown", (e) => {
             manager.render();
@@ -877,7 +1008,7 @@ class Stroke {
 // new Shape("rectangle", Canvas.canvasCtx, Canvas.shapeProperties, {x:350, y:200, height:100, width:200}, Canvas).drawShape();
 
 class Shape{
-    constructor(shape, canvasCtx, shapeProperties, geometryInfo = [], manager){
+    constructor(shape, canvasCtx, shapeProperties, geometryInfo = [], manager, url = "https://thumbs.dreamstime.com/b/idyllic-summer-landscape-clear-mountain-lake-alps-45054687.jpg"){
         this.shape = shape;
         this.canvasCtx = canvasCtx;
         this.shapeProperties = structuredClone(shapeProperties);
@@ -886,6 +1017,9 @@ class Shape{
         this.shapeEditor = new ShapeEditor(this, manager)
         this.manager.shapeMode = true;
         this.killed = false;
+        this.url = url;
+        this.image = new Image();
+        this.image.src = url;
     }
 
     drawShape(canvasCtx = this.canvasCtx){
@@ -1028,7 +1162,18 @@ class Shape{
         const width = this.geometryInfo.width; // width
         canvasCtx.translate(x + width/2, y + height/2);
         canvasCtx.rotate((Math.PI/180)*(this.geometryInfo.rotation))
-        canvasCtx.rect(-1*width/2, -1*height/2, width, height);
+        if((this.url != null) && (this.image.complete)){
+            canvasCtx.strokeStyle = "#00000000";
+            canvasCtx.fillStyle = "#ffffff85";
+            this.geometryInfo.height = width*(this.image.naturalHeight/this.image.naturalWidth);
+            canvasCtx.fillRect(-1*width/2, -1*height/2, width, this.geometryInfo.height);
+            // canvasCtx.fill();
+            canvasCtx.drawImage(this.image, -1*width/2, -1*height/2, width, this.geometryInfo.height);
+        }
+        else{
+            canvasCtx.rect(-1*width/2, -1*height/2, width, height);
+        }
+        console.log(this/this.geometryInfo.url)
     }
 
     endFreeShape(){
@@ -2302,14 +2447,14 @@ class CanvasCustomizationInterface {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.manager.strokes.push(new Shape("triangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+            this.manager.strokes.push(new Shape("triangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null));
         })
         let latestFreeShape = null;
         this.freeShape.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            let shape = new Shape("freeShape", this.manager.canvasCtx, this.shapeProperties, null, this.manager);
+            let shape = new Shape("freeShape", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null);
             latestFreeShape = shape;
             this.manager.strokes.push(shape);
             if(this.touchscreenInterface){
@@ -2320,25 +2465,25 @@ class CanvasCustomizationInterface {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.manager.strokes.push(new Shape("circle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+            this.manager.strokes.push(new Shape("circle", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null));
         })
         this.lineShape.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.manager.strokes.push(new Shape("line", this.manager.canvasCtx, this.strokeProperties, null, this.manager));
+            this.manager.strokes.push(new Shape("line", this.manager.canvasCtx, this.strokeProperties, null, this.manager, null));
         })
         this.squareShape.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.manager.strokes.push(new Shape("square", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+            this.manager.strokes.push(new Shape("square", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null));
         })
         this.rectangleShape.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
             //     return;
             // }
-            this.manager.strokes.push(new Shape("rectangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager));
+            this.manager.strokes.push(new Shape("rectangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null));
         })
         this.eraser.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
