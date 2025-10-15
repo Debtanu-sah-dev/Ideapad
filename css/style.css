@@ -53,6 +53,8 @@
     /* --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' version='1.1' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:svgjs='http://svgjs.dev/svgjs' viewBox='0 0 700 700' width='700' height='700' opacity='0.1'%3E%3Cdefs%3E%3Cfilter id='nnnoise-filter' x='-20%25' y='-20%25' width='140%25' height='140%25' filterUnits='objectBoundingBox' primitiveUnits='userSpaceOnUse' color-interpolation-filters='linearRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.123' numOctaves='4' seed='15' stitchTiles='stitch' x='0%25' y='0%25' width='100%25' height='100%25' result='turbulence'%3E%3C/feTurbulence%3E%3CfeSpecularLighting surfaceScale='9' specularConstant='2.3' specularExponent='20' lighting-color='%23ff0000' x='0%25' y='0%25' width='100%25' height='100%25' in='turbulence' result='specularLighting'%3E%3CfeDistantLight azimuth='3' elevation='89'%3E%3C/feDistantLight%3E%3C/feSpecularLighting%3E%3CfeColorMatrix type='saturate' values='0' x='0%25' y='0%25' width='100%25' height='100%25' in='specularLighting' result='colormatrix'%3E%3C/feColorMatrix%3E%3C/filter%3E%3C/defs%3E%3Crect width='700' height='700' fill='%23ffffff00'%3E%3C/rect%3E%3Crect width='700' height='700' fill='%23ff0000' filter='url(%23nnnoise-filter)'%3E%3C/rect%3E%3C/svg%3E"); */
     --noise: initial;
     /* --noise: url(images/glassdistortion.svg); */
+    /* transition-timing-function: linear(0, 0.002 0.5%, 0.009 1%, 0.021 1.5%, 0.039 2.1%, 0.063 2.7%, 0.092 3.3%, 0.126 3.9%, 0.163 4.5%, 0.231 5.5%, 0.323 6.7%, 0.421 7.9%, 0.682 11%, 0.816 12.7%, 0.882 13.6%, 0.944 14.5%, 0.995 15.3%, 1.041 16.1%, 1.088 17%, 1.125 17.8%, 1.158 18.6%, 1.186 19.4%, 1.209 20.2%, 1.228 21%, 1.243 21.8%, 1.255 22.7%, 1.26 23.3%, 1.263 23.9%, 1.263 25.1%, 1.255 26.4%, 1.241 27.7%, 1.221 29%, 1.195 30.4%, 1.164 31.9%, 1.059 36.7%, 1.028 38.3%, 1.002 39.8%, 0.976 41.6%, 0.957 43.3%, 0.943 45%, 0.934 46.8%, 0.931 48.1%, 0.931 49.4%, 0.933 50.8%, 0.937 52.2%, 0.949 54.9%, 0.984 61.1%, 0.999 64.1%, 1.01 67.4%, 1.017 70.7%, 1.018 73.2%, 1.017 75.9%, 0.999 90.4%, 0.996 95%, 1); */
+    --timing-function-subtle:cubic-bezier(0.42, 0, 1, 0.54);
 }
 
 *{
@@ -62,7 +64,8 @@
 
     font-family: "Ubuntu Mono", monospace;
     color: var(--text-color);
-    transition-timing-function: cubic-bezier(0.42, 0, 1, 0.54);
+    /* transition-timing-function: cubic-bezier(0.42, 0, 1, 0.54); */
+    transition-timing-function: linear(0, 0.322 3%, 0.603 6.1%, 0.843 9.3%, 1.043 12.6%, 1.129 14.3%, 1.209 16.1%, 1.278 17.9%, 1.336 19.7%, 1.387 21.6%, 1.428 23.5%, 1.462 25.5%, 1.487 27.6%, 1.5 29.1%, 1.509 30.6%, 1.513 32.2%, 1.514 33.8%, 1.511 35.5%, 1.504 37.2%, 1.493 39.1%, 1.478 41%, 1.448 44.1%, 1.406 47.7%, 1.23 60.7%, 1.161 66.3%, 1.129 69.2%, 1.1 72.1%, 1.076 74.9%, 1.056 77.6%, 1.042 80%, 1.029 82.5%, 1.019 85%, 1.011 87.6%, 1.006 90.2%, 1.002 93%, 1) !important;
 }
 
 
@@ -405,7 +408,7 @@ pre{
 }
 
 .responseContainer > .responseImg{
-    width: 50%;
+    width: 100%;
     user-select: none;
     box-shadow: var(--box-shadow);
     border-radius: 1vh;
@@ -475,7 +478,8 @@ pre span.token.punctuation {
     position: relative;
     left:50%;
     transform: translateX(-50%);
-    transition:width 0.2s, background-size, 0.2s;
+    transition:width 0.2s, background-size, 0.2s !important;
+    transition-timing-function: var(--timing-function-subtle) !important;
     /* transition-delay: 0.2s; */
     /* overflow: hidden; */
     /* position: fixed;
@@ -488,7 +492,7 @@ pre span.token.punctuation {
 
 #ai > button{
     opacity: 0;
-    transition: 0.2s;
+    transition: 0.2s !important;
     transform: scale(0);
     width: 0;
     overflow: hidden;
@@ -496,6 +500,7 @@ pre span.token.punctuation {
     padding: 0;
     /* aspect-ratio: 1 / 1 !important; */
     pointer-events: none;
+    transition-timing-function: var(--timing-function-subtle) !important;
 }
 /* #ai > button > span{
     transition: 0.2s;
@@ -601,6 +606,8 @@ pre span.token.punctuation {
     word-wrap: normal;
     white-space-collapse:preserve-spaces ;
     white-space: nowrap;
+    transition: box-shadow 0.2s !important;
+    scale: 1 !important;
 }
 
 .contentContainer{
@@ -685,6 +692,7 @@ pre span.token.punctuation {
     /* gap: 1vh; */
     border-radius: 100vmax;
     transition: 0.2s;
+    transition-timing-function: var(--timing-function-subtle) !important;
     align-items: center;
     height: 100%;
     padding: 1vh;
@@ -694,6 +702,7 @@ pre span.token.punctuation {
     opacity: 0;
     transition: 0.2s;
     transform: scale(0);
+    transition-timing-function: var(--timing-function-subtle) !important;
 }
 
 button[data-type = "x"]{
@@ -947,8 +956,9 @@ button{
     font-size: 1.15rem;
     cursor: pointer;
     border: none;
+    user-select: none;
     outline: none;
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.2s, scale 0.2s;
     backdrop-filter: var(--backdrop-filter-special);
 }
 
@@ -958,6 +968,7 @@ button:disabled{
 
 button:hover{
     box-shadow: var(--reverse-box-shadow);
+    scale: 1.2;
 }
 
 button:disabled:hover{
@@ -986,7 +997,7 @@ input{
     font-size: 1.15rem;
     border: none;
     outline: none;
-    backdrop-filter: var(--backdrop-filter);
+    backdrop-filter: var(--backdrop-filter-special);
 }
 
 input[type = "color"]{
@@ -1052,7 +1063,7 @@ textarea{
     font-size: 1.15rem;
     border: none;
     outline: none;
-    backdrop-filter: var(--backdrop-filter);
+    backdrop-filter: var(--backdrop-filter-special) !important;
 }
 
 /* width */
@@ -1150,9 +1161,18 @@ textarea{
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
-.diagramDialog svg{
+.scrollableDiv > div > button{
+    position: absolute;
+    bottom: 2vh;
+    right: 2vh;
+    backdrop-filter: var(--backdrop-filter-special);
+    border-radius: 100vmax;
+}
+
+.diagramDialog svg, .diagramDialog iframe{
     overflow:visible;
     /* min-width: 100% !important; */
     min-height: 100% !important;
@@ -1228,12 +1248,60 @@ textarea{
 }
 
 .imagesDialog:modal{
+    display: flex;
+    flex-direction: column;
+    gap: 2vh;
+    padding: 2vh;
+}
+
+.imagesSearch{
+    display: flex;
+    gap: 2vh;
+    width: 100%;
+    flex-grow: 1;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 2vh;
+}
+
+.imagesSearchInput{
+    flex-basis: 100%;
+    flex-grow: 1;
+}
+
+.imagesContainer{
     overflow: auto !important;
     display: grid !important;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     /* flex-wrap: wrap; */
+    gap: 2vh;
+    height: 100%;
+    width: 100%;
+    border-radius: 2vh;
 }
-.imagesDialog > img{
+.imagesContainer div{
+    width: 100%;
+    height: 100%;
+    /* display: flex;
+    flex-direction: column;
+    padding: 2vh;
+    gap: 2vh; */
+    backdrop-filter: var(--backdrop-filter-special);
+    /* border-radius: 4vh; */
+    border-radius: 2vh;
+    box-shadow: var(--box-shadow);
+}
+
+.imagesContainer button{
+    position: absolute;
+    bottom: 2vh;
+    right: 2vh;
+    backdrop-filter: var(--backdrop-filter-special);
+    border-radius: 100vmax;
+    /* aspect-ratio: 1/1; */
+}
+
+.imagesContainer  img{
     background-color: white;
     border-radius: 2vh;
     width: 100%;

@@ -153,7 +153,9 @@ let textToIconMap = {
   "offeraser": "ink_eraser_off",
   "unselect":"remove_selection",
   "scalebob":"lens_blur",
-  "imagebob": "image"
+  "imagebob": "image",
+  "insert image":"add_photo_alternate",
+  "image search":"image_search"
 }
 
 

@@ -254,23 +254,70 @@ async function searchWikimediaImages(description) {
       // const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=allimages&gsrsearch=${encodeURIComponent(description)}&gsrnamespace=6&gsrlimit=10&aiprop=url|mime&format=json&origin=*`;
       // const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(description)}&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime&format=json&origin=*`;
       // const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(description)}&gsrnamespace=6&gsrlimit=10&prop=imageinfo&iiprop=url|mime&iiurlwidth=500&format=json&origin=*&iimime=video%2Fmp4%2Capplication%2Fpdf%2Capplication%2Foctet-stream%2Capplication%2Fzip%2Capplication%2Fmsword%2Capplication%2Fvnd.ms-excel%2Capplication%2Fvnd.ms-powerpoint%2Capplication%2Fmsaccess%2Capplication%2Fmsproject%2Capplication%2Fmsword%2Capplication%2Frtf%2Capplication%2Fxml%2Capplication%2Fjson%2Capplication%2Fjavascript%2Capplication%2Fx-shockwave-flash%2Capplication%2Fvnd.ms-excel%2Capplication%2Fvnd.ms-powerpoint%2Capplication%2Fvnd.ms-access%2Capplication%2Fvnd.ms-project%2Capplication%2Fvnd.ms-word%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fx-rtf%2Capplication%2Fx-xml%2Capplication%2Fx-json%2Capplication%2Fx-javascript%2Capplication%2Fx-shockwave-flash%2Capplication%2Fx-ms-excel%2Capplication%2Fx-ms-powerpoint%2Capplication%2Fx-ms-access%2Capplication%2Fx-ms-project%2Capplication%2Fx-ms-word%2Capplication%2Fx-zip-compressed%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication%2Fx-msaccess%2Capplication%2Fx-msproject%2Capplication%2Fx-msword%2Capplication%2Fzip%2Capplication%2Fx-7z-compressed%2Capplication%2Fx-rar-compressed%2Capplication%2Fx-tar%2Capplication%2Fgzip%2Capplication%2Fx-bzip2%2Capplication%2Fx-xz%2Capplication%2Fx-msdownload%2Capplication%2Fx-msi%2Capplication::contentReference[oaicite:10]{index=10}`;
-      const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(description)}&format=json&origin=*`;
-      const res = await fetch(apiUrl);
-      const data = await res.json();
-      let urls = [];
-      let pages = [];
-      for(let info of Object.values(data.query.search)){
-          pages.push(info.title)
+      let terms = description.toLowerCase().split(",").map(e => e.trim());
+      let datas = [];
+      for(let term of terms){
+        const apiUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=${encodeURIComponent(term.toLowerCase())}&origin=*`;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        datas.push(data);
       }
-      const apiUrl2 = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(pages.join("|"))}&prop=pageimages&format=json&origin=*&pithumbsize=4999`;
-      const res2 = await fetch(apiUrl2);
-      const data2 = await res2.json();
-for(let info of Object.values(data2.query.pages)){
-  if(info.thumbnail != null){
-    urls.push(info.thumbnail.source)
-  }
-}
-return [pages, urls];
+      let pages = datas.map(e => e[1])
+      let allpages = [];
+      for(let page of pages){
+          allpages = [...allpages, ...page]
+      }
+      // let urls = [];
+      // let pages = [];
+      // for(let info of Object.values(data.query.search)){
+      //     pages.push(info.title)
+      // }
+      // https://en.wikipedia.org/w/api.php?action=query&pageids=${encodeURIComponent(data)}&generator=images&prop=imageinfo&iiprop=url|dimensions|mime&format=json
+      // let datas2 = [];
+      let urls = []
+      for(let page of allpages){
+        const apiUrl2 = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(page)}&generator=images&prop=imageinfo&iiprop=url|dimensions|mime&format=json&origin=*`;
+        const res2 = await fetch(apiUrl2);
+        const data2 = await res2.json();
+        // datas2.push(data2)
+        console.log(data2)
+        if((data2.query == null) || (data2.query.pages == null)){
+          continue;
+        }
+        let arr = Object.values(data2.query.pages).filter(e => {
+        if(e.title.toLowerCase().includes("ui_icon")){
+            return false
+        }
+        if(e.title.toLowerCase().includes("wiki") && (page.toLowerCase().includes("wiki") == false)){
+            return false
+        }
+        if(e.title.toLowerCase().match(/commons[\- \_]logo/g) != null){
+            return false
+        }
+        if(e.title.toLowerCase().includes("symbol")){
+            return false
+        }
+        if(e.title.toLowerCase().includes("clipart")){
+            return false
+        }
+        if(e.title.toLowerCase().includes("translate")){
+            return false
+        }
+        if(e.imagerepository == "local"){
+            return false
+        }
+        return true
+    })
+        for(let info of arr){
+            urls.push(info.imageinfo[0].url)
+        }
+      }
+// for(let info of Object.values(data2.query.pages)){
+//   if(info.thumbnail != null){
+//     urls.push(info.thumbnail.source)
+//   }
+// }
+return [allpages, urls];
       // if (!data.query) return [];
       // const pages = Object.values(data.query.pages);
       // return data;
@@ -313,41 +360,45 @@ export class AI{
         this.imagesDialog.classList.add("imagesDialog");
         // TO-DO:remove closedby any
         this.imagesDialog.setAttribute("closedby", "any");
+        this.imagesSearch = document.createElement("div");
+        this.imagesSearch.classList.add("imagesSearch");
+        this.imagesSearchInput = document.createElement("input");
+        this.imagesSearchInput.classList.add("imagesSearchInput");
+        this.imagesSearchInput.placeholder = "What image do you want? type here";
+        this.imagesSearchButton = document.createElement("button");
+        this.imagesSearchButton.classList.add("button");
+        this.imagesSearchButton.innerText = "image search"
+        this.imagesSearch.appendChild(this.imagesSearchInput);
+        this.imagesSearch.appendChild(this.imagesSearchButton);
+        this.imagesDialog.appendChild(this.imagesSearch);
+        this.imagesContainer = document.createElement("div");
+        this.imagesContainer.classList.add("imagesContainer");
+        this.imagesDialog.appendChild(this.imagesContainer);
         this.parent.appendChild(this.imagesDialog);
         this.canQueryImage = true;
+        this.imagesSearchButton.addEventListener("click", async () => {
+          this.imagesContainer.innerHTML = "";
+          if (this.canQueryImage) {
+            this.imagesSearchButton.disabled = true;
+            this.canQueryImage = false;
+            let matchingImages = await searchWikimediaImages(this.imagesSearchInput.value.trim());
+            this.canQueryImage = true;
+            this.populateImages(matchingImages);
+            this.imagesSearchButton.disabled = false;
+          }
+        })
         this.manager.selectionInterface.imageBob.addEventListener("click", async () => {
-          this.imagesDialog.innerHTML = ""
+          this.imagesContainer.innerHTML = ""
           this.imagesDialog.showModal();
           if(this.canQueryImage){
+            this.imagesSearchButton.disabled = true;
             this.canQueryImage = false;
             let matchingImages = await this.createImageQuery(this.manager.getDataUrlFromSubset(this.manager.selectionInterface.selectedObjects).join(","));
             this.canQueryImage = true;
-            for(let image of matchingImages[1]){
-              let img = document.createElement("img");
-              img.src = image;
-              img.addEventListener("click", () => {
-                this.imagesDialog.close();
-                let selectedObjects = this.manager.selectionInterface.selectedObjects;
-                let rect = new Shape("rectangle", this.manager.canvasCtx, this.manager.shapeProperties, null, this.manager, image);
-                rect.shapeEditor.killEditor();
-                rect.geometryInfo = {};
-                rect.geometryInfo.rotation = this.manager.selectionInterface.initialEditorConfig.rotation;
-                if(this.manager.selectionInterface.editorContainer.offsetWidth < this.manager.selectionInterface.editorContainer.offsetHeight){
-                  rect.geometryInfo.width = this.manager.selectionInterface.editorContainer.offsetWidth;
-                  rect.geometryInfo.height = this.manager.selectionInterface.editorContainer.offsetWidth*(img.naturalHeight/img.naturalWidth);
-                }
-                else{
-                  rect.geometryInfo.height = this.manager.selectionInterface.editorContainer.offsetHeight;
-                  rect.geometryInfo.width = this.manager.selectionInterface.editorContainer.offsetHeight*(img.naturalWidth/img.naturalHeight);
-                }
-                rect.geometryInfo.x = this.manager.selectionInterface.editorContainer.offsetLeft - this.manager.translation.x - this.manager.selectionInterface.editorContainer.offsetWidth/2;
-                rect.geometryInfo.y = this.manager.selectionInterface.editorContainer.offsetTop - this.manager.translation.y - this.manager.selectionInterface.editorContainer.offsetHeight/2;
-                this.manager.strokes.push(rect)
-                this.manager.render();
-                this.manager.selectionInterface.selectedObjects = [rect];
-              })
-              this.imagesDialog.appendChild(img);
-            }
+            console.log(matchingImages)
+            this.populateImages(matchingImages[0]);
+            this.imagesSearchInput.value = matchingImages[1];
+            this.imagesSearchButton.disabled = false;
           }
         })
         // this.dialog.addEventListener("blur", () => {
@@ -434,7 +485,9 @@ export class AI{
         })
         this.openDiagramButton.addEventListener("click", () => {
             this.diagramDialog.showModal();
-            this.scrollableDiv.innerHTML += "";
+            for(let svg of this.scrollableDiv.querySelectorAll("svg")){
+              svg.innerHTML += "";
+            }
             let svgs = this.scrollableDiv.querySelectorAll("div");
             let lastSvg = svgs[svgs.length - 1];
             if(lastSvg){
@@ -476,7 +529,40 @@ export class AI{
             console.log(JSON.parse(result.response.text()).svg);
             let div = document.createElement("div");
             div.innerHTML = JSON.parse(result.response.text()).svg;
+            let image = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(JSON.parse(result.response.text()).svg)}`
             this.scrollableDiv.appendChild(div);
+            let imageAddButton = document.createElement("button");
+            imageAddButton.innerText = "Insert Image";
+            iconify(imageAddButton)
+            div.insertBefore(imageAddButton, div.firstChild);
+            imageAddButton.addEventListener("click", () => {
+              console.log(image, "success")
+              this.diagramDialog.close();
+              this.dialog.close()
+              let rect = new Shape("rectangle", this.manager.canvasCtx, this.manager.shapeProperties, null, this.manager, image);
+              rect.image.onload = () => {
+                this.manager.render();
+                rect.geometryInfo.height = this.manager.canvasElement.width/2*(rect.image.naturalHeight/rect.image.naturalWidth);
+                this.manager.selectionInterface.select();
+                if(this.manager.canvasCustomizationInterface.touchscreenInterface){
+                    this.manager.canvasCustomizationInterface.touchscreenInterface.innerHTML = "";
+                    this.manager.canvasCustomizationInterface.touchscreenInterface.innerText = "unselect";
+                    // this.pan.querySelector("span").innerText = "do_not_touch"
+                    iconify(this.manager.canvasCustomizationInterface.touchscreenInterface)
+                }
+                this.manager.selectionInterface.selectedObjects = [rect];
+                this.manager.selectionInterface.editStageConverter();
+              }
+              rect.shapeEditor.killEditor();
+              rect.geometryInfo = {
+                rotation:0,
+                width: this.manager.canvasElement.width/2,
+                height: this.manager.canvasElement.width/2*(rect.image.naturalHeight/rect.image.naturalWidth),
+                x:(-1) *this.manager.translation.x,
+                y:(-1) * this.manager.translation.y
+              };
+              this.manager.strokes.push(rect);
+            })
         }
     }
 
@@ -484,7 +570,7 @@ export class AI{
       let getInfo = await this.giveMetaPrompt(false, new ImageDataBlob(dataurl), `
 You are assisting in a reverse image search using Wikimedia Commons.
 
-Your task is to generate search-friendly keywords based on the image.
+Your task is to generate search-friendly keyword based on the image.
 The keywords must describe what the image *is* or *represents* — not its colors, emotions, or style.
 
 Follow these exact rules:
@@ -495,25 +581,71 @@ Follow these exact rules:
 - If it is related to a location, include possible place or landmark type (e.g. "mountain landscape", "Indian temple", "ancient ruins").
 - If it has a distinct context like "logo", "symbol", or "illustration", include that too.
 - Avoid artistic terms, color references, abstract concepts, or descriptions like "beautiful", "dark", or "realistic".
-- Output ONLY a single line of comma-separated keywords, no sentences or explanations.
+- Output ONLY a single keyword, no sentences or explanations.
 - if it is a physics diagram then only tell what part of physics it represent
 - be specific do not give broad keyword if the image shows a parabola then do not give keywords like functions polynomial, instead give keywords like Parabola, quadratic curve etc.
 - think of as if you were to search a similar looking image what would you search
 - If the image is about for example projectile motion then only give, (Projectile Motion, Projectile 2D, Kinematics)
+- Only give a single keyword which best describes the contents of the image and a keyword which when put in a search engine will provide what the image is showing in essence
+- If it describes something specific then give that as a keyword ex.(Google, Atwood Machine, Double pendulum, Fourier Transform etc.)
+- If you know title of a specific wikipedia page which is exactly what the image is representing give that instead ex.(For image of right angle with sides labelled as a, b, c and maybe with an identity then give Pythagorean Theorem).
+- If it is a mathematical diagram or a physics diagram or a chemistry diagram then reference the exact wikipedia keyword/title which refers to that.
+- If it is a geometrical construction then specify which geometrical construction ex.(Angle bisection, perpendicular bisector, Basic proportionality theorem etc.)
 
 Example outputs:
-- "circuit diagram, resistor network, electronics"
-- "ancient temple, architecture, India"
-- "solar system, planets, astronomy"
-- "human brain, anatomy diagram, neuroscience"
+- "Full adder"
+- "India Temple"
+- "solar system"
+- "neuroscience"
 `);
       console.log(getInfo)
       let images = await searchWikimediaImages(getInfo);
-      return images;
+      return [images, getInfo];
     }
 
     createResponse(){
         this.run();
+    }
+
+    populateImages(matchingImages){
+      for(let image of matchingImages[1]){
+        let card = document.createElement("div");
+        let img = document.createElement("img");
+        img.src = image;
+        card.appendChild(img)
+        let button = document.createElement("button");
+        button.innerText = "Insert Image";
+        iconify(button)
+        card.appendChild(button);
+        button.addEventListener("click", () => {
+          this.imagesDialog.close();
+          let selectedObjects = this.manager.selectionInterface.selectedObjects;
+          let rect = new Shape("rectangle", this.manager.canvasCtx, this.manager.shapeProperties, null, this.manager, image);
+          rect.image.onload = () => {
+            this.manager.render();
+          }
+          rect.shapeEditor.killEditor();
+          rect.geometryInfo = {};
+          rect.geometryInfo.rotation = this.manager.selectionInterface.initialEditorConfig.rotation;
+          if(this.manager.selectionInterface.editorContainer.offsetWidth < this.manager.selectionInterface.editorContainer.offsetHeight){
+            rect.geometryInfo.width = this.manager.selectionInterface.editorContainer.offsetWidth;
+            rect.geometryInfo.height = this.manager.selectionInterface.editorContainer.offsetWidth*(img.naturalHeight/img.naturalWidth);
+          }
+          else{
+            rect.geometryInfo.height = this.manager.selectionInterface.editorContainer.offsetHeight;
+            rect.geometryInfo.width = this.manager.selectionInterface.editorContainer.offsetHeight*(img.naturalWidth/img.naturalHeight);
+          }
+          rect.geometryInfo.x = this.manager.selectionInterface.editorContainer.offsetLeft - this.manager.translation.x - this.manager.selectionInterface.editorContainer.offsetWidth/2;
+          rect.geometryInfo.y = this.manager.selectionInterface.editorContainer.offsetTop - this.manager.translation.y - this.manager.selectionInterface.editorContainer.offsetHeight/2;
+          this.manager.strokes.push(rect)
+          this.manager.selectionInterface.selectedObjects = [rect];
+          this.manager.selectionInterface.refresh();
+        })
+        img.addEventListener("error", () => {
+          this.imagesContainer.removeChild(card);
+        })
+        this.imagesContainer.appendChild(card);
+      }
     }
 
     giveMetaPrompt = async (mockupMode = false, imageBlob = null, prompt) => {

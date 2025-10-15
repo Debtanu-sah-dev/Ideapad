@@ -633,29 +633,22 @@ class SelectionInterface{
             }
             if(!this.canTransform){
                 this.editorContainer.classList.add("active");
-                let boundingBox = boundingRectangle(this.selectedObjects.map(e => e.getGlobalBoundingBox(true)));
-                console.log(boundingBox)
-                this.editorContainer.style.top = (boundingBox.topY + boundingBox.bottomY)/2 + "px";
-                this.editorContainer.style.left = (boundingBox.topX + boundingBox.bottomX)/2 + "px";
-                this.editorContainer.style.width = (boundingBox.bottomX - boundingBox.topX) + "px";
-                this.editorContainer.style.height = (boundingBox.bottomY - boundingBox.topY) + "px";
-                this.initialEditorConfig.translation.x = (boundingBox.topX + boundingBox.bottomX)/2;
-                this.initialEditorConfig.translation.y = (boundingBox.topY + boundingBox.bottomY)/2;
-                this.initialEditorConfig.aspectRatioWbyH = this.editorContainer.offsetWidth/this.editorContainer.offsetHeight;
-                this.initialEditorConfig.t = Math.atan(this.editorContainer.offsetWidth/this.editorContainer.offsetHeight);
+                this.refresh();
             }
             this.canTransform = true;
         })
         let initialDelta = new Point(0, 0)
-        let canMove = false;
+        this.canMove = false;
         this.editorContainer.addEventListener("mousedown", (e) => {
-            initialDelta.x = e.x - this.editorContainer.offsetLeft;
-            initialDelta.y = e.y - this.editorContainer.offsetTop;
-            canMove = true;
+            if(!this.canScale){
+                initialDelta.x = e.x - this.editorContainer.offsetLeft;
+                initialDelta.y = e.y - this.editorContainer.offsetTop;
+                this.canMove = true;
+            }
         })
 
         this.editorContainer.addEventListener("mousemove", (e) => {
-            if (canMove) {
+            if (this.canMove) {
                 this.editorContainer.style.left = (e.x - initialDelta.x) + "px";
                 this.editorContainer.style.top = (e.y - initialDelta.y) + "px";
                 for(let object of this.selectedObjects){
@@ -667,7 +660,7 @@ class SelectionInterface{
             }
         })
         this.selectionWindow.addEventListener("mousemove", (e)=> {
-            if (canScale) {
+            if (this.canScale) {
                 let d = dist(this.editorContainer.offsetLeft, this.editorContainer.offsetTop, e.x, e.y);
                 let t = this.initialEditorConfig.t;
                 this.initialEditorConfig.scaleFactor = (2*d*Math.sin(t))/this.editorContainer.offsetWidth;
@@ -693,28 +686,28 @@ class SelectionInterface{
             }
         })
         this.selectionWindow.addEventListener("mouseup", () => {
-            canMove = false;
-            canScale = false;
+            this.canMove = false;
+            this.canScale = false;
         })
         this.selectionWindow.addEventListener("mouseleave", () => {
-            canMove = false;
-            canScale = false;
+            this.canMove = false;
+            this.canScale = false;
         })
 
         this.editorContainer.addEventListener("mouseup", () => {
-            canMove = false;
-            canScale = false;
+            this.canMove = false;
+            this.canScale = false;
         })
 
         this.editorContainer.addEventListener("mouseleave", () => {
-            canMove = false;
-            // canScale = false;
+            this.canMove = false;
+            // this.canScale = false;
         })
-        let canScale = false;
+        this.canScale = false;
         this.scaleBob.addEventListener("mousedown", (e) => {
             e.stopPropagation();
-            canMove = false;
-            canScale = true;
+            this.canMove = false;
+            this.canScale = true;
         })
         this.scaleBob.addEventListener("mousemove", (e) => {
             // e.stopPropagation();
@@ -723,6 +716,19 @@ class SelectionInterface{
             // e.stopPropagation();
         })
         this.initialClick = null;
+    }
+
+    refresh(){
+        let boundingBox = boundingRectangle(this.selectedObjects.map(e => e.getGlobalBoundingBox(true)));
+        console.log(boundingBox)
+        this.editorContainer.style.top = (boundingBox.topY + boundingBox.bottomY)/2 + this.manager.translation.y + "px";
+        this.editorContainer.style.left = (boundingBox.topX + boundingBox.bottomX)/2 + this.manager.translation.x + "px";
+        this.editorContainer.style.width = (boundingBox.bottomX - boundingBox.topX) + "px";
+        this.editorContainer.style.height = (boundingBox.bottomY - boundingBox.topY) + "px";
+        this.initialEditorConfig.translation.x = (boundingBox.topX + boundingBox.bottomX)/2 + this.manager.translation.x;
+        this.initialEditorConfig.translation.y = (boundingBox.topY + boundingBox.bottomY)/2 + this.manager.translation.y;
+        this.initialEditorConfig.aspectRatioWbyH = this.editorContainer.offsetWidth/this.editorContainer.offsetHeight;
+        this.initialEditorConfig.t = Math.atan(this.editorContainer.offsetWidth/this.editorContainer.offsetHeight);
     }
 
     select(){
@@ -915,6 +921,22 @@ class SelectionInterface{
         }
     }
 
+    editStageConverter(){
+        // this.initialClick = null;
+        // console.log(this.selectedObjects);
+        if(this.selectedObjects.length === 0){
+            this.unselect();
+            return;
+        }
+        if(!this.canTransform){
+            this.editorContainer.classList.add("active");
+            this.refresh();
+        }
+        this.canTransform = true;
+        this.canMove = false;
+        this.canScale = false;
+    }
+
     unselect(){
         this.canSelect = false;
         this.selectionWindow.classList.remove("active")
@@ -1020,6 +1042,7 @@ class Shape{
         this.url = url;
         this.image = new Image();
         this.image.src = url;
+        this.image.setAttribute('crossOrigin', '');
     }
 
     drawShape(canvasCtx = this.canvasCtx){
@@ -1162,7 +1185,7 @@ class Shape{
         const width = this.geometryInfo.width; // width
         canvasCtx.translate(x + width/2, y + height/2);
         canvasCtx.rotate((Math.PI/180)*(this.geometryInfo.rotation))
-        if((this.url != null) && (this.image.complete)){
+        if((this.url != null) && (this.image.complete) && (this.image.naturalHeight != 0)){
             canvasCtx.strokeStyle = "#00000000";
             canvasCtx.fillStyle = "#ffffff85";
             this.geometryInfo.height = width*(this.image.naturalHeight/this.image.naturalWidth);
