@@ -664,6 +664,7 @@ class SelectionInterface{
                 let d = dist(this.editorContainer.offsetLeft, this.editorContainer.offsetTop, e.x, e.y);
                 let t = this.initialEditorConfig.t;
                 this.initialEditorConfig.scaleFactor = (2*d*Math.sin(t))/this.editorContainer.offsetWidth;
+                console.log(this.initialEditorConfig.scaleFactor)
                 // this.editorContainer.style.width = e.x - this.editorContainer.offsetLeft + this.editorContainer.offsetWidth/2 + "px";
                 // this.editorContainer.style.height = this.editorContainer.offsetWidth/this.initialEditorConfig.aspectRatioWbyH + "px";
                 this.editorContainer.style.width = 2*d*Math.sin(t) + "px";

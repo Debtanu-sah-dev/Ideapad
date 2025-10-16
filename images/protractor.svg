@@ -1,4 +1,10 @@
 <svg width="1080" height="1080" viewBox="0 0 1080 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>
+        path{
+            --primary-color:#FF5100;
+            stroke: color-mix(in hsl, var(--primary-color), #fff 70%) !important;
+        }
+    </style>
 <g clip-path="url(#clip0_2710_2)">
 <path d="M1084.56 540.5L1019.27 540.5M61.7279 540.5L-3.55925 540.5M540.5 -3.55935L540.5 61.7278M540.5 1019.27L540.5 1084.56" stroke="#858585" stroke-width="3" stroke-linecap="round"/>
 <path d="M1082.49 587.918L1039.13 584.125M41.8697 496.876L-1.48938 493.082M587.918 -1.48903L584.124 41.8701M496.875 1039.13L493.082 1082.49" stroke="#858585" stroke-width="3" stroke-linecap="round"/>

@@ -1,4 +1,23 @@
 <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<style>
+        path{
+            --primary-color:#FF5100;
+            stroke: color-mix(in hsl, var(--primary-color), #fff 70%) !important;
+        }
+
+        line{
+            --primary-color:#FF5100;
+            stroke: color-mix(in hsl, var(--primary-color), #fff 70%) !important;
+        }
+
+        circle{
+            --primary-color:#FF5100;
+            fill: color-mix(in hsl, var(--primary-color), #fff 70%) !important;
+        }
+
+        
+    </style>
 <g clip-path="url(#clip0_2708_3)">
 <path d="M15.9996 20.9881L15.9997 -0.011909" stroke="#858585"/>
 <line x1="0.5" y1="30" x2="0.5" stroke="#858585"/>

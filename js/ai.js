@@ -455,7 +455,11 @@ export class AI{
                 this.createDiagramButton.disabled = true;
                 this.canRespond = false;
                 this.canDiagram = false;
-                await this.run();
+                try {
+                  await this.run();
+                } catch (error) {
+                  console.error(error);
+                }
                 this.createResponseButton.disabled = false;
                 this.createDiagramButton.disabled = false;
                 this.canRespond = true;
@@ -470,7 +474,11 @@ export class AI{
                 this.canRespond = false;
                 this.canDiagram = false;
                 console.log("suc")
-                await this.createDiagram(this.responseInput.value);
+                try {
+                  await this.createDiagram(this.responseInput.value);
+                } catch (error) {
+                  console.error(error)
+                }
                 this.createResponseButton.disabled = false;
                 this.createDiagramButton.disabled = false;
                 this.canRespond = true;
@@ -712,12 +720,12 @@ class AppletManager{
 
         this.labelInput = document.createElement("input");
         this.labelInput.type = "input";
-        this.labelInput.placeholder = "Applet Title"
+        this.labelInput.placeholder = "Title"
         this.descriptionTextarea = document.createElement("textarea");
         // this.descriptionTextarea.value = `create a solar system in 3d with all the planets and ring around saturn and moon with earth make all the planet also have their own light source to make them visible and add stars in the background, remove wireframe settings from the planets sphere, make the scene bright with accurate colors and speed`
-        this.descriptionTextarea.placeholder = `Describe your applet. Ex. create a solar system in 3d with all the planets and ring around saturn and moon with earth make all the planet also have their own light source to make them visible and add stars in the background, remove wireframe settings from the planets sphere, make the scene bright with accurate colors and speed`
+        this.descriptionTextarea.placeholder = `Describe your applet. Ex. create a solar system in 3d`
         this.mockupModeLabel = document.createElement("label");
-        this.mockupModeLabel.innerText = "Mockup Mode for sketch ?"
+        this.mockupModeLabel.innerText = "Mockup Mode";
         this.mockupModeLabel.setAttribute("for", "mockupModeRadio")
         this.mockupMode = document.createElement("input");
         this.mockupMode.type = "checkbox"

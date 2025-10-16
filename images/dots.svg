@@ -1,13 +1,31 @@
 <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g clip-path="url(#clip0_2701_2)">
-<rect width="30" height="30" fill="rgba(255,255,255,0)"/>
-<line y1="15" x2="30" y2="15" stroke="#858585" stroke-dasharray="2 2"/>
-<line x1="15" y1="30" x2="15" stroke="#858585" stroke-dasharray="2 2"/>
-<circle cx="15" cy="15.25" r="1.25" fill="#7e7e7e"/>
-</g>
+<style>
+    svg{
+        --rotate:19deg;
+        filter: sepia(100%) hue-rotate(calc(-55.5deg + var(--rotate))) brightness(50%);
+    }
+</style>
+<line y1="15" x2="30" y2="15" stroke="url(#paint0_linear_0_1)" stroke-dasharray="2 2"/>
+<line x1="15" y1="30" x2="15" stroke="url(#paint1_linear_0_1)" stroke-dasharray="2 2"/>
+<circle cx="15" cy="15" r="1.25" fill="url(#paint2_radial_0_1)"/>
 <defs>
-<clipPath id="clip0_2701_2">
-<rect width="30" height="30" fill="white"/>
-</clipPath>
+<linearGradient id="paint0_linear_0_1" x1="0" y1="16" x2="30" y2="16" gradientUnits="userSpaceOnUse">
+<stop stop-opacity="0"/>
+<stop offset="0.25" stop-color="#C8C8C8" stop-opacity="0.66"/>
+<stop offset="0.5" stop-color="#C8C8C8"/>
+<stop offset="0.75" stop-color="#C8C8C8" stop-opacity="0.66"/>
+<stop offset="1" stop-opacity="0"/>
+</linearGradient>
+<linearGradient id="paint1_linear_0_1" x1="16" y1="30" x2="16" y2="0" gradientUnits="userSpaceOnUse">
+<stop stop-opacity="0"/>
+<stop offset="0.25" stop-color="#C8C8C8" stop-opacity="0.66"/>
+<stop offset="0.5" stop-color="#C8C8C8"/>
+<stop offset="0.75" stop-color="#C8C8C8" stop-opacity="0.66"/>
+<stop offset="1" stop-opacity="0"/>
+</linearGradient>
+<radialGradient id="paint2_radial_0_1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(15 15) rotate(90) scale(1.25)">
+<stop stop-color="#808080"/>
+<stop offset="1" stop-color="#B0B0B0"/>
+</radialGradient>
 </defs>
 </svg>
