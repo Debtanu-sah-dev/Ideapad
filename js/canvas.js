@@ -622,6 +622,17 @@ class SelectionInterface{
                     this.manager.canvasCtx.rect(boundingBox.topX + this.manager.translation.x, boundingBox.topY + this.manager.translation.y, boundingBox.bottomX - boundingBox.topX, boundingBox.bottomY - boundingBox.topY)
                     this.manager.canvasCtx.stroke();
                 }
+                this.manager.canvasCtx.fillStyle = varCss("transparent-text");
+                // this.manager.canvasCtx.fillStyle = "#ffffff42";
+                this.manager.canvasCtx.lineWidth = 2;
+                this.manager.canvasCtx.lineCap = "round";
+                this.manager.canvasCtx.lineJoin = "round";
+                this.manager.canvasCtx.strokeStyle = varCss("text-color");
+                // this.manager.canvasCtx.strokeStyle = "#ffffff85";
+                this.manager.canvasCtx.beginPath();
+                this.manager.canvasCtx.rect(Math.min(this.initialClick.x, e.x), Math.min(this.initialClick.y, e.y), Math.abs(this.initialClick.x - e.x), Math.abs(this.initialClick.y - e.y))
+                this.manager.canvasCtx.stroke();
+                this.manager.canvasCtx.fill();
             }
         })
         this.selectionWindow.addEventListener("mouseup", () => {
@@ -636,6 +647,7 @@ class SelectionInterface{
                 this.refresh();
             }
             this.canTransform = true;
+            this.manager.render();
         })
         let initialDelta = new Point(0, 0)
         this.canMove = false;
@@ -2324,7 +2336,7 @@ function ik(a, b, A, B) {
     let phi = Math.atan2(-(b.y - a.y), b.x - a.x)
     
     return new Point(a.x + B*Math.cos(th + phi), a.y - B*Math.sin(th + phi))
-  }
+}
 
 class CanvasCustomizationInterface {
     constructor(manager) {
@@ -2344,6 +2356,18 @@ class CanvasCustomizationInterface {
         this.colorPicker2.value = "#ffffff"
         this.interfaceWindow.appendChild(this.colorPicker1);
         this.interfaceWindow.appendChild(this.colorPicker2);
+        //Fill Type Selector
+        this.fillTypeSelector = document.createElement("button");
+        this.fillTypeSelector.innerText = "Stroke";
+        this.interfaceWindow.appendChild(this.fillTypeSelector);
+        this.thicknessSlider = document.createElement("input");
+        this.thicknessSlider.type = "range";
+        this.thicknessSlider.value = 5;
+        this.thicknessSlider.step = 1;
+        this.thicknessSlider.min = 1;
+        this.thicknessSlider.max = 25;
+        this.interfaceWindow.appendChild(this.thicknessSlider)
+        this.interfaceWindow.appendChild(document.createElement("hr"));
         // Triangle
         this.triangleShape = document.createElement("button");
         this.triangleShape.innerText = "Triangle";
@@ -2374,49 +2398,39 @@ class CanvasCustomizationInterface {
         this.rectangleShape.innerText = "Rectangle";
         this.interfaceWindow.appendChild(this.rectangleShape);
 
+        this.interfaceWindow.appendChild(document.createElement("hr"));
+        // Clear
+        this.clear = document.createElement("button");
+        this.clear.innerText = "Clear";
+        this.interfaceWindow.appendChild(this.clear);
+        
+        // Undo
+        this.undo = document.createElement("button");
+        this.undo.innerText = "Undo";
+        this.interfaceWindow.appendChild(this.undo);
+        
+        // Redo
+        this.redo = document.createElement("button");
+        this.redo.innerText = "Redo";
+        this.interfaceWindow.appendChild(this.redo);
+        
         // Eraser
         this.eraser = document.createElement("button");
         this.eraser.innerText = "Eraser";
         this.interfaceWindow.appendChild(this.eraser);
 
-        // Clear
-        this.clear = document.createElement("button");
-        this.clear.innerText = "Clear";
-        this.interfaceWindow.appendChild(this.clear);
-
-        // Undo
-        this.undo = document.createElement("button");
-        this.undo.innerText = "Undo";
-        this.interfaceWindow.appendChild(this.undo);
-
-        // Redo
-        this.redo = document.createElement("button");
-        this.redo.innerText = "Redo";
-        this.interfaceWindow.appendChild(this.redo);
-
-        //Fill Type Selector
-        this.fillTypeSelector = document.createElement("button");
-        this.fillTypeSelector.innerText = "Stroke";
-        this.interfaceWindow.appendChild(this.fillTypeSelector);
+        this.select = document.createElement("button");
+        this.select.innerText = "select";
+        this.interfaceWindow.appendChild(this.select);
 
         this.pan = document.createElement("button");
         this.pan.innerText = "Pan";
         this.interfaceWindow.appendChild(this.pan);
 
-        this.select = document.createElement("button");
-        this.select.innerText = "select";
-        this.interfaceWindow.appendChild(this.select);
-
-        this.fillTypeArray = ["Stroke", "Fill", "Stroke & Fill"];
+        this.interfaceWindow.appendChild(document.createElement("hr"));
+        this.fillTypeArray = ["Stroke", "Fill", "Both"];
         this.fillType = 0;
 
-        this.thicknessSlider = document.createElement("input");
-        this.thicknessSlider.type = "range";
-        this.thicknessSlider.value = 5;
-        this.thicknessSlider.step = 1;
-        this.thicknessSlider.min = 1;
-        this.thicknessSlider.max = 25;
-        this.interfaceWindow.appendChild(this.thicknessSlider)
         manager.parent.appendChild(this.interfaceWindow);
         manager.parent.appendChild(this.interfaceWindowBackdrop);
 
@@ -2635,7 +2649,7 @@ class CanvasCustomizationInterface {
                 this.pan.querySelector("span").innerText = "pan_tool"
             }
             this.activeStatus = true
-            this.interfaceWindow.style.display = "flex";
+            this.interfaceWindow.style.display = "grid";
             this.interfaceWindowBackdrop.style.display = "initial";
             setTimeout(() => {
                 x = Math.min(x, this.manager.parent.offsetWidth - this.interfaceWindow.offsetWidth);

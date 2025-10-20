@@ -34,6 +34,43 @@ Prism.manual = true;
 
 marked.use(markedKatex(options));
 
+//*AI code below
+
+function renderMarkdownWithSVG(md) {
+  // --- Step 1: Preserve fenced code blocks so they remain as <pre><code> ---
+  const escapedMd = md.replace(/```([a-zA-Z0-9_-]*)?([\s\S]*?)```/g, (match, lang, code) => {
+    const escaped = code
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const languageClass = lang ? ` class="language-${lang}"` : "";
+    return `<pre><code${languageClass}>${escaped}</code></pre>`;
+  });
+
+  // --- Step 2: Protect raw <svg> blocks with placeholders ---
+  const svgMap = new Map();
+  let counter = 0;
+  const protectedMd = escapedMd.replace(/<svg[\s\S]*?<\/svg>/gi, (svg) => {
+    const token = `@@SVG_${counter++}@@`;
+    svgMap.set(token, svg);
+    return token;
+  });
+
+  // --- Step 3: Parse markdown normally ---
+  const parsedHtml = marked.parse(protectedMd);
+
+  // --- Step 4: Restore SVGs untouched ---
+  let finalHtml = parsedHtml;
+  for (const [token, svg] of svgMap.entries()) {
+    finalHtml = finalHtml.replace(token, svg);
+  }
+
+  // --- Step 5: Return clean HTML ---
+  return finalHtml;
+}
+
+//* AI code end
+
 //*Note Ai Code Below for Touch to mouse map
 
 (function enableUniversalTouchToMouseMapping() {
@@ -155,7 +192,8 @@ let textToIconMap = {
   "scalebob":"lens_blur",
   "imagebob": "image",
   "insert image":"add_photo_alternate",
-  "image search":"image_search"
+  "image search":"image_search",
+  "copy": "content_copy"
 }
 
 
@@ -176,3 +214,58 @@ function iconify(element, forced = false){
 document.querySelectorAll("button").forEach((e) => {
   iconify(e);
 })
+
+function varCss(property){
+  return getComputedStyle(document.documentElement).getPropertyValue('--' + property.replace(/ /g, "-"));
+}
+
+//*AI Code below caution ⚠️⚠️
+
+/**
+ * Sets the CSS custom property on an input element to its current value.
+ *
+ * @param {HTMLInputElement} input The input element to initialize.
+ */
+function initializeInput(input) {
+  // If the input doesn't have a value, use an empty string.
+  // Otherwise, use its value. This handles cases where we don't
+  // want to set a visual value for non-color inputs initially.
+  const inputValue = input.value || '';
+  input.style.setProperty('--input-value', inputValue);
+  
+  // Update the CSS custom property on every 'input' event.
+  input.addEventListener('input', (event) => {
+    event.target.style.setProperty('--input-value', event.target.value);
+  });
+}
+
+/**
+ * Initializes all existing input elements and sets up a MutationObserver
+ * to handle new ones.
+ */
+function setupInputVariableUpdates() {
+  // 1. Initialize all input elements that are already in the DOM.
+  document.querySelectorAll('input').forEach(initializeInput);
+
+  // 2. Set up a MutationObserver to watch for new input elements.
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.addedNodes) {
+        for (const node of mutation.addedNodes) {
+          // Check if the added node is an input element.
+          if (node.nodeType === 1 && node.matches('input')) {
+            initializeInput(node);
+          }
+        }
+      }
+    }
+  });
+
+  // Start observing the entire document body for new nodes being added.
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Run the setup function after the DOM is fully loaded.
+document.addEventListener('DOMContentLoaded', setupInputVariableUpdates);
+
+// AI code end

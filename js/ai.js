@@ -204,7 +204,7 @@ const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
 const modelDiagram = genAI.getGenerativeModel(generationConfigForDiagram);
 const modelQuiz = genAI.getGenerativeModel(generationConfigForQuiz);
 const modelFast = genAI.getGenerativeModel({model: "gemini-2.5-flash-lite"});
-const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject.";
+const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject. Note your response is going to be treated in Markdown format if relevant use svg images abiding to following criteria, flat design paradigm, with a suitable background color and if and only if needed then only do animation using either css or native animation tags in svg and if there is animation mentioned after the entire animation sequence is completed it should loop like a gif but strictly do not use animation until it is needed and do not apply style to any element outside the svg like body, head, html etc. or change anything in the :root selector structure your code such that you don't use any class attribute or tag names to reference elements in css, work with data-types or ids. Remember Strictly use svg only is required and text cannot do the job of explanation. also do not provide the code of svg in code block but as a svg image";
 const metaPrompt = "Explain this image and give a small summary of what is illustrated and what topic and frameworks it is based on, give description of this image giving a complete picture of the image in just 100 words altogether.";
 const rectificationPrompt = `check and rectify the above code, check for any potential errors and fix it. remove any html, CSS or JavaScript comments. remove all the comments strictly. check that all CSS properties are valid else fix it, check all html tags and attributes are proper and no attribute is mixed with the tag name like:- <pid="paragraph">...</p> is wrong so make it <p id="paragraph">...</p>. In JavaScript check for any functions which are called but not defined:-Example makeGraph() is called somewhere in the entire code but is not made so write the make graph function by understanding the HTML codes context and make it so it works with the integrity of the HTML code without giving rise to another error, check for any syntax error like extra }, ), not using proper syntax etc.`;
 const diagramPrompt = "\n\nCreate a svg code using the above context which is of flat design paradigm, with a suitable background color and if and only if specified in the following then only do animation using either css or native animation tags in svg and if there is animation mentioned after the entire animation sequence is completed it should loop like a gif but strictly do not use animation until it is specified in the following and do not apply style to any element outside the svg like body, head, html etc. or change anything in the :root selector structure your code such that you don't use any class attribute to reference elements in css, work with data-types or ids,therefore create a svg representing the following in it: ";
@@ -368,8 +368,15 @@ export class AI{
         this.imagesSearchButton = document.createElement("button");
         this.imagesSearchButton.classList.add("button");
         this.imagesSearchButton.innerText = "image search"
+        this.closeImages = document.createElement("button");
+        this.closeImages.innerText = "X";
+        this.closeImages.classList.add("closeImages")
+        this.closeImages.addEventListener("click", () => {
+            this.imagesDialog.close();
+        })
         this.imagesSearch.appendChild(this.imagesSearchInput);
         this.imagesSearch.appendChild(this.imagesSearchButton);
+        this.imagesSearch.appendChild(this.closeImages)
         this.imagesDialog.appendChild(this.imagesSearch);
         this.imagesContainer = document.createElement("div");
         this.imagesContainer.classList.add("imagesContainer");
@@ -493,9 +500,10 @@ export class AI{
         })
         this.openDiagramButton.addEventListener("click", () => {
             this.diagramDialog.showModal();
-            for(let svg of this.scrollableDiv.querySelectorAll("svg")){
-              svg.innerHTML += "";
-            }
+            this.scrollableDiv.querySelectorAll("svg").forEach(svg => {
+              const clone = svg.cloneNode(true);
+              svg.parentNode.replaceChild(clone, svg);
+            });
             let svgs = this.scrollableDiv.querySelectorAll("div");
             let lastSvg = svgs[svgs.length - 1];
             if(lastSvg){
@@ -523,9 +531,37 @@ export class AI{
         this.imageDataURL.inlineData.data = url[1];
         const result = await model.generateContent([structuredClone(this.imageDataURL), `${this.prompt} ${this.responseInput.value != "" ? ("\nGive importance to the following: " + this.responseInput.value): ""}`]);
         this.response = result.response.text();
-        this.responseText.innerHTML = DOMPurify.sanitize(marked.parse(result.response.text())).replace(/\[object Object\]/ig, "");
+        const renderer = new marked.Renderer();
+
+        console.log(this.response);
+        let extract = renderMarkdownWithSVG(result.response.text());
+        console.log(extract);
+        this.responseText.innerHTML = DOMPurify.sanitize(extract).replace(/\[object Object\]/ig, "");
         mathRectify(this.responseText);
-        Prism.highlightAllUnder(this.responseText)
+        Prism.highlightAllUnder(this.responseText);
+        this.responseText.querySelectorAll("button").forEach((e) => {
+          iconify(e);
+        })
+        this.responseText.querySelectorAll("svg").forEach(svg => {
+          const wrapper = document.createElement('div');
+          const shadow = wrapper.attachShadow({ mode: 'open' });
+          const clonedSvg = svg.cloneNode(true);
+          shadow.appendChild(clonedSvg);
+          const style = document.createElement("style");
+          style.innerHTML = `svg{
+    display: table;
+    margin: 1vh auto;
+    border-radius: var(--button-bounding);
+    border: var(--border);
+    border-top: none;
+    max-width: calc(100% - 1vh);
+    max-height: 100vh;
+    min-height: 50vh;
+        }`
+        shadow.appendChild(style);
+          svg.parentNode.insertBefore(wrapper, svg);
+          svg.parentNode.removeChild(svg);
+        });
     }
 
     createDiagram = async (text) => {
@@ -549,17 +585,17 @@ export class AI{
               this.dialog.close()
               let rect = new Shape("rectangle", this.manager.canvasCtx, this.manager.shapeProperties, null, this.manager, image);
               rect.image.onload = () => {
-                this.manager.render();
                 rect.geometryInfo.height = this.manager.canvasElement.width/2*(rect.image.naturalHeight/rect.image.naturalWidth);
                 this.manager.selectionInterface.select();
                 if(this.manager.canvasCustomizationInterface.touchscreenInterface){
-                    this.manager.canvasCustomizationInterface.touchscreenInterface.innerHTML = "";
-                    this.manager.canvasCustomizationInterface.touchscreenInterface.innerText = "unselect";
-                    // this.pan.querySelector("span").innerText = "do_not_touch"
-                    iconify(this.manager.canvasCustomizationInterface.touchscreenInterface)
+                  this.manager.canvasCustomizationInterface.touchscreenInterface.innerHTML = "";
+                  this.manager.canvasCustomizationInterface.touchscreenInterface.innerText = "unselect";
+                  // this.pan.querySelector("span").innerText = "do_not_touch"
+                  iconify(this.manager.canvasCustomizationInterface.touchscreenInterface)
                 }
                 this.manager.selectionInterface.selectedObjects = [rect];
                 this.manager.selectionInterface.editStageConverter();
+                this.manager.render();
               }
               rect.shapeEditor.killEditor();
               rect.geometryInfo = {
@@ -730,6 +766,11 @@ class AppletManager{
         this.mockupMode = document.createElement("input");
         this.mockupMode.type = "checkbox"
         this.mockupMode.id = "mockupModeRadio"
+        this.mockupModeContainer = document.createElement("div");
+        this.mockupModeContainer.classList.add("mockupModeContainer");
+        this.mockupModeContainer.appendChild(this.mockupModeLabel);
+        this.mockupModeContainer.appendChild(this.mockupMode);
+        this.submitWrapper.appendChild(this.mockupModeContainer);
         this.submitMetaData = document.createElement("button");
         this.submitMetaData.innerText = "Create Applet";
         this.submitMetaData.addEventListener("click", async () => {
@@ -751,8 +792,6 @@ class AppletManager{
         })
         this.addContainerWrapper.appendChild(this.labelInput);
         this.addContainerWrapper.appendChild(this.descriptionTextarea);
-        this.submitWrapper.appendChild(this.mockupModeLabel);
-        this.submitWrapper.appendChild(this.mockupMode);
         this.submitWrapper.appendChild(this.submitMetaData);
         this.addContainerWrapper.appendChild(this.submitWrapper);
         this.addContainer.appendChild(this.addContainerWrapper);
@@ -947,7 +986,7 @@ class Applet{
         let url = Ai.manager.getDataUrl();
         Ai.responseImage.src = url.join(",");
         Ai.imageDataURL.inlineData.data = url[1];
-        let recipePrompt = `Create a step by step guide to Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}. Give detailed step by step guide. give the architecture of the functioning of the i.e. the process on which the html code is working, for example:- for creating a to do list you can show the architecture as such:- task class with properties as task_text and status. task manager class which handles status of tasks. also provide structure of UI to be follow and the basic underlying design of the web page. for example:- for a to do list create a section with a text_input and a add button to add tasks. a section below it to search tasks and a section below it which has the list of tasks sorted from latest to oldest. a select option on the other side of the search section to change sorting of the list of tasks such as date created, important, A to Z or Z to A and etc. make the tutorial friendly for a beginner to advanced programmer. add all the minute details. focus on implementation more. if maths or physics is required also explain the mathematics or the physics to solve the problems and sub-problems. Do not write the code your self as this is an exercise to the person reading your tutorial. use code snippets to only enhance implementation process and understanding purposes in javascript. use code snippets only when needed do not give code snippets for css or html. do not tell to create index.html files or give tutorial regarding creating the files or making the web page responsive. do not give additional cdn's for p5 but you can give for other script's and css's cdns used. do not suggest to create any other files or folders because the html code should be independent of the file structure around it because where the code is being used you don't have access to file system, although you can use http links but avoid as much as possible for media and stuff only use for cdns`;
+        let recipePrompt = `Create a step by step guide to Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}. Give detailed step by step guide. give the architecture of the functioning of the i.e. the process on which the html code is working, for example:- for creating a to do list you can show the architecture as such:- task class with properties as task_text and status. task manager class which handles status of tasks. also provide structure of UI to be follow and the basic underlying design of the web page. for example:- for a to do list create a section with a text_input and a add button to add tasks. a section below it to search tasks and a section below it which has the list of tasks sorted from latest to oldest. a select option on the other side of the search section to change sorting of the list of tasks such as date created, important, A to Z or Z to A and etc. make the tutorial friendly for a beginner to advanced programmer. add all the minute details. focus on implementation more. if maths or physics is required also explain the mathematics or the physics to solve the problems and sub-problems. Do not write the code your self as this is an exercise to the person reading your tutorial. use code snippets to only enhance implementation process and understanding purposes in javascript. use code snippets only when needed do not give code snippets for css or html. do not tell to create index.html files or give tutorial regarding creating the files. Making the web page responsive is a very crucial make the styling in aspect of responsive UI and make the UI able to work on mobile and laptops and tablets. do not give additional cdn's for p5 but you can give for other script's and css's cdns used. do not suggest to create any other files or folders because the html code should be independent of the file structure around it because where the code is being used you don't have access to file system, although you can use http links but avoid as much as possible for media and stuff only use for cdns`;
         let recipe = await model.generateContent([structuredClone(Ai.imageDataURL), recipePrompt]);
         let recipeText = recipe.response.text();
         console.log(recipeText)

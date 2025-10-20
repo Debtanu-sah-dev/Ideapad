@@ -1,0 +1,11 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <style>
+        line{
+            --primary-color:#FF5100;
+            stroke: color-mix(in hsl, var(--primary-color), #fff 70%) !important;
+        }
+    </style>
+
+    <line x1="231.345" y1="60.2759" x2="69.2759" y2="230.448" stroke="white" stroke-width="20" stroke-linecap="round"/>
+    <line x1="257.379" y1="160.276" x2="164.276" y2="258.034" stroke="white" stroke-width="20" stroke-linecap="round"/>
+</svg>
