@@ -640,6 +640,7 @@ class SelectionInterface{
             // console.log(this.selectedObjects);
             if(this.selectedObjects.length === 0){
                 this.unselect();
+                this.manager.canvasCustomizationInterface.active();
                 return;
             }
             if(!this.canTransform){
@@ -1226,6 +1227,16 @@ class ShapeEditor{
         this.manager = manager;
         this.manager.canvasCustomizationInterface.inactive();
         this.editCanvas = document.createElement("canvas");
+        this.editCanvas.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            // e.stopPropagation();
+            if(this.manager.canvasCustomizationInterface.latestFreeShape != null){
+                console.log(this.manager.canvasCustomizationInterface.latestFreeShape);
+                if(!this.manager.canvasCustomizationInterface.latestFreeShape.killed){
+                    this.manager.canvasCustomizationInterface.latestFreeShape.endFreeShape();
+                }
+            }
+        })
         this.editCanvasCtx = this.editCanvas.getContext("2d");
         this.editCanvas.classList.add("editCanvas")
         this.resizeEvent = () => {
@@ -2487,13 +2498,13 @@ class CanvasCustomizationInterface {
             // }
             this.manager.strokes.push(new Shape("triangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null));
         })
-        let latestFreeShape = null;
+        this.latestFreeShape = null;
         this.freeShape.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
             //     return;
             // }
             let shape = new Shape("freeShape", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null);
-            latestFreeShape = shape;
+            this.latestFreeShape = shape;
             this.manager.strokes.push(shape);
             if(this.touchscreenInterface){
                 this.touchscreenInterface.querySelector("span").innerText = "edit_off"
@@ -2625,10 +2636,10 @@ class CanvasCustomizationInterface {
         this.touchscreenInterface.innerText = "Tools"
         document.querySelector("#ai").appendChild(this.touchscreenInterface)
         this.touchscreenInterface.addEventListener("click", () => {
-            if(latestFreeShape != null){
-                console.log(latestFreeShape);
-                if(!latestFreeShape.killed){
-                    latestFreeShape.endFreeShape();
+            if(this.latestFreeShape != null){
+                console.log(this.latestFreeShape);
+                if(!this.latestFreeShape.killed){
+                    this.latestFreeShape.endFreeShape();
                 }
             }
             if(this.activeStatus){
@@ -2639,6 +2650,7 @@ class CanvasCustomizationInterface {
             }
         })
     }
+    
     active(x = 10, y = 10){
         if(!this.activeStatus){
             this.manager.selectionInterface.unselect();

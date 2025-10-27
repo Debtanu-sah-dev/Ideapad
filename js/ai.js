@@ -2,7 +2,7 @@ import { GoogleGenerativeAI} from "@google/generative-ai";
 // console.log(Type);
 const genAI = new GoogleGenerativeAI(API_KEY);
 const generationConfig = {
-    model:"gemini-2.5-flash",
+    model:"gemini-flash-latest",
     // model:"gemini-2.5-pro-exp-03-25",
     generationConfig:{
         responseMimeType: 'application/json',
@@ -38,7 +38,7 @@ const generationConfig = {
     }
   };
 const generationConfigForRectification = {
-    model:"gemini-2.5-flash",
+    model:"gemini-flash-latest",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -51,7 +51,7 @@ const generationConfigForRectification = {
    }
 };
 const generationConfigForDiagram = {
-    model:"gemini-2.5-flash",
+    model:"gemini-flash-latest",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -64,7 +64,7 @@ const generationConfigForDiagram = {
    }
 };
 const generationConfigForQuiz = {
-    model:"gemini-2.5-flash",
+    model:"gemini-flash-latest",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -198,12 +198,12 @@ const generationConfigForQuiz = {
 }
    }
 };
-const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
+const model = genAI.getGenerativeModel({model: "gemini-flash-latest"});
 const modelApplet = genAI.getGenerativeModel(generationConfig);
 const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
 const modelDiagram = genAI.getGenerativeModel(generationConfigForDiagram);
 const modelQuiz = genAI.getGenerativeModel(generationConfigForQuiz);
-const modelFast = genAI.getGenerativeModel({model: "gemini-2.5-flash-lite"});
+const modelFast = genAI.getGenerativeModel({model: "gemini-flash-lite-latest"});
 const prompt = "Explain the image and give a summary and conclusion of it with proper inference and related topics also if any question is proposed in the question then provide a solution to the given subject. Note your response is going to be treated in Markdown format if relevant use svg images abiding to following criteria, flat design paradigm, with a suitable background color and if and only if needed then only do animation using either css or native animation tags in svg and if there is animation mentioned after the entire animation sequence is completed it should loop like a gif but strictly do not use animation until it is needed and do not apply style to any element outside the svg like body, head, html etc. or change anything in the :root selector structure your code such that you don't use any class attribute or tag names to reference elements in css, work with data-types or ids. Remember Strictly use svg only is required and text cannot do the job of explanation. also do not provide the code of svg in code block but as a svg image";
 const metaPrompt = "Explain this image and give a small summary of what is illustrated and what topic and frameworks it is based on, give description of this image giving a complete picture of the image in just 100 words altogether.";
 const rectificationPrompt = `check and rectify the above code, check for any potential errors and fix it. remove any html, CSS or JavaScript comments. remove all the comments strictly. check that all CSS properties are valid else fix it, check all html tags and attributes are proper and no attribute is mixed with the tag name like:- <pid="paragraph">...</p> is wrong so make it <p id="paragraph">...</p>. In JavaScript check for any functions which are called but not defined:-Example makeGraph() is called somewhere in the entire code but is not made so write the make graph function by understanding the HTML codes context and make it so it works with the integrity of the HTML code without giving rise to another error, check for any syntax error like extra }, ), not using proper syntax etc.`;
@@ -554,10 +554,11 @@ export class AI{
     border-radius: var(--button-bounding);
     border: var(--border);
     border-top: none;
-    max-width: calc(100% - 1vh);
+    max-width: 100%;
     max-height: 100vh;
     min-height: 50vh;
         }`
+        wrapper.style.maxWidth = "calc(100% - 1vh) !important";
         shadow.appendChild(style);
           svg.parentNode.insertBefore(wrapper, svg);
           svg.parentNode.removeChild(svg);
@@ -900,6 +901,7 @@ class Applet{
         this.submitEdit.disabled = true;
         this.submitEdit.addEventListener("click", async () => {
             if(this.canModify){
+                this.versionControlOpen.disabled = true;
                 this.canModify = false;
                 this.submitEdit.disabled = true;
                 let prompt = `${this.appletInfo.html}\nModify The above html code to include the following modification: ${this.editInput.value}. do the modification by modifying the above code to match the needed modification. do not add comments. change the fundamental working of the html code as per the modification requested. add the given modification without causing errors. \n Give the full code do not skip any code, the code you have given should be able to run perfectly verbatim to what you have given. do not give indications like triple dots to make the user assume code is written. Ex. <div>...</div> is wrong, complete it like <div>Hi I am a div</div>. don't leave the code incomplete`
@@ -927,11 +929,13 @@ class Applet{
                 }
                 this.submitEdit.disabled = false;
                 this.canModify = true;
+                this.versionControlOpen.disabled = false;
             }
         });
         this.canSolve = false;
         this.solveError.addEventListener("click", async () => {
             if(this.canSolve){
+                this.versionControlOpen.disabled = true;
                 let errorMessageList = this.errors.map(e => formatError(e, this.appletInfo.html)).join("\n");
                 let errorInfos = `${this.appletInfo.html} \n This is the list of errors with the above HTML code fix these error without causing another error or modifying the core framework/integrity of the functioning of the code.if the errors as caused by comments remove them entirely \n ${errorMessageList}. \n Give the full code do not skip any code, the code you have given should be able to run perfectly verbatim to what you have given. do not give indications like triple dots to make the user assume code is written. Ex. <div>...</div> is wrong, complete it like <div>Hi I am a div</div>. don't leave the code incomplete`
                 console.log(errorMessageList)
@@ -961,6 +965,7 @@ class Applet{
                     this.solveError.disabled = false;
                     this.canSolve = true;
                 }
+                this.versionControlOpen.disabled = false;
             }
         })
         this.generateApplet();
@@ -986,15 +991,23 @@ class Applet{
         let url = Ai.manager.getDataUrl();
         Ai.responseImage.src = url.join(",");
         Ai.imageDataURL.inlineData.data = url[1];
-        let recipePrompt = `Create a step by step guide to Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}. Give detailed step by step guide. give the architecture of the functioning of the i.e. the process on which the html code is working, for example:- for creating a to do list you can show the architecture as such:- task class with properties as task_text and status. task manager class which handles status of tasks. also provide structure of UI to be follow and the basic underlying design of the web page. for example:- for a to do list create a section with a text_input and a add button to add tasks. a section below it to search tasks and a section below it which has the list of tasks sorted from latest to oldest. a select option on the other side of the search section to change sorting of the list of tasks such as date created, important, A to Z or Z to A and etc. make the tutorial friendly for a beginner to advanced programmer. add all the minute details. focus on implementation more. if maths or physics is required also explain the mathematics or the physics to solve the problems and sub-problems. Do not write the code your self as this is an exercise to the person reading your tutorial. use code snippets to only enhance implementation process and understanding purposes in javascript. use code snippets only when needed do not give code snippets for css or html. do not tell to create index.html files or give tutorial regarding creating the files. Making the web page responsive is a very crucial make the styling in aspect of responsive UI and make the UI able to work on mobile and laptops and tablets. do not give additional cdn's for p5 but you can give for other script's and css's cdns used. do not suggest to create any other files or folders because the html code should be independent of the file structure around it because where the code is being used you don't have access to file system, although you can use http links but avoid as much as possible for media and stuff only use for cdns`;
+        let aspectRatio = window.innerWidth/window.innerHeight;
+        let orientation = aspectRatio > 1 ? "Landscape" : "Portrait";
+        let orientationNote = `Remember the device in which this html is going to be viewed is a device in orientation ${orientation}, so make the style and css to work in this ${orientation} orientation the device has resolution ${window.innerWidth}x${window.innerHeight} so set the pixel size according to this and all the canvas sizes to best fit this requirement`
+        let cdnList = STD_CDN.map(e => JSON.stringify(e)).join(",") + " .";
+        let recipePrompt = `Create a step by step guide to Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}. Give detailed step by step guide. give the architecture of the functioning of the i.e. the process on which the html code is working, for example:- for creating a to do list you can show the architecture as such:- task class with properties as task_text and status. task manager class which handles status of tasks. also provide structure of UI to be followed and the basic underlying design of the web page. for example:- for a to do list create a section with a text_input and a add button to add tasks. a section below it to search tasks and a section below it which has the list of tasks sorted from latest to oldest. a select option on the other side of the search section to change sorting of the list of tasks such as date created, important, A to Z or Z to A and etc. make the tutorial friendly for a beginner to advanced programmer. add all the minute details. focus on implementation more. if maths or physics is required also explain the mathematics or the physics to solve the problems and sub-problems. Do not write the code your self as this is an exercise to the person reading your tutorial. use code snippets to only enhance implementation process and understanding purposes in javascript. use code snippets only when needed do not give code snippets for css or html. do not tell to create index.html files or give tutorial regarding creating the files. Making the web page responsive is a very crucial make the styling in aspect of responsive UI and make the UI able to work on mobile and laptops and tablets. do not suggest to create any other files or folders because the html code should be independent of the file structure around it because where the code is being used you don't have access to file system, although you can use http links but avoid as much as possible for media and stuff only use for cdns. Here is list of all cdns you can use as required , this list is not exhaustive if you need other cdns you may use maybe for code highlight or any ui library, Remember do not use all the cdns but for particular tasks you can use them and if used also mention the CDN link and implementation but do not give the entire code just the implementation details/code, use the exact version and link of cdn as given in following:- ${cdnList}. For whichever cdn's you are using mention there name and their cdn link clearly as this step is very very important mention only the cdn link's which are being used and how to use them using script tag as some may need import maps so give them the entire tutorial with respect to that and show them exactly how to use the cdn and whether they need to use the cdn in a simple script tag with src or an import map if using import map tell the user that how should they import the cdn in the script type module.Note:- Do not add any specific url of any sorts of images just do not give you are not accurate do not give even it is for a texture or a image. ${orientationNote}`;
         let recipe = await model.generateContent([structuredClone(Ai.imageDataURL), recipePrompt]);
         let recipeText = recipe.response.text();
         console.log(recipeText)
-        let fullPrompt = `Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and if necessary use p5.js, use this cdn for p5.js, <script src="https://cdn.jsdelivr.net/npm/p5@1.11.5/lib/p5.js"></script>. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}.Give a description and title to the HTML code. the inputs or input fields used should be listed with the appropriate type instead of using default input tags in html or p5 use this tag:- <input id = "{id of the input}" type="{type of the input}"/> and give a label to that input. Please provide a JSON object with the following fields: 'title', 'description', 'html', and 'inputs'. Each input should be an object with 'id', 'label', and 'type' properties. This should be a full body interface not bounded in a container div and *Do not add any comments in the code especially js*. don't add any comments it is a strict warning, format the html code properly with lines and indentations
+        let fullPrompt = `Create HTML code using internal CSS in style tag in head, and internal JavaScript in script tag in body after all html elements in body and. the HTML code is based on the following requirement:- ${this.description}. the image's description and summary of the given image on which the required HTML code was needed to visualize or illustrate some aspects is as follow ${metaPrompt}${this.mockupMode? ".Use this image as a mockup design of the final webpage":""}.Give a description and title to the HTML code. the inputs or input fields used should be listed with the appropriate type instead of using default input tags in html use this tag:- <input id = "{id of the input}" type="{type of the input}"/> and give a label to that input. Please provide a JSON object with the following fields: 'title', 'description', 'html', and 'inputs'. Each input should be an object with 'id', 'label', and 'type' properties. This should be a full body interface not bounded in a container div but make the page scrollable and *Do not add any comments in the code especially js*. don't add any comments it is a strict warning, format the html code properly with lines and indentations
 ${rectificationPrompt}
 
 Follow the following tutorial/step-by-step guide to build the HTML code:-
-${recipeText}`;
+${recipeText}${recipeText.toLowerCase().includes("gemini ")?`\n\nBelow is the implementation and usage of some features in gemini and how to properly import it:-\n${STD_CDN.filter(e => e.name == "Gemini")[0]["cdnlink&Usage"]}`:""}
+Note:- Do not add any specific url of any sorts of images just do not give you are not accurate do not give even it is for a texture or a image.
+Do Not Forget to add the cdn links in the html page you have to add it from your side if you forget to add the cdn links from your side then the entire html code will fail use the cdn links which are mentioned above which are mentioned above strictly.
+Important Note:-${orientationNote}
+NOTE:- If you are using a string with the innerContent being </script> then escape it to be <\\/script> for example:-\n <script>let a = "</script>";</script> is wrong and will throw error instead <script>let a = "<\\/script>";</script> \n this can come into play when you want to dynamically change the inner document of an iframe and in this process you set it to a string representing the html which contains this script tag in the string or when you display a code snippet on the screen and dynamically update it then. a good rule of thumb is if you are using any html tag in a string then properly escape it. replacing <,> with &lt;, &gt; might not work always as seen in the iframe example where the string is still going to converted into actual html element via innerHTML or something else`;
         console.log(fullPrompt)
         // console.log(Ai.imageDataURL)
         // console.log(genAI);
@@ -1081,7 +1094,9 @@ class Version{
 
         currentVersionButton.addEventListener("click", () => {
             this.versionControlObject.selectedVersion = this;
-            this.applet.iframe.srcdoc = this.html;
+            this.applet.errors = [];
+            this.applet.solveError.disabled = true;
+            this.applet.iframe.srcdoc = injectErrorHandlerIntoHTML(this.html, this.applet.id);
             this.applet.appletInfo.html = this.html;
             console.log(this.versionControlObject);
         })
@@ -1149,8 +1164,8 @@ function injectErrorHandlerIntoHTML(htmlContent, id) {
         parent.postMessage(
           { type: 'iframe-error', message, source, lineno, colno, error: error && error.stack, id:${id} },
           '*'
-        );
-      };
+        );return false;
+      }; window.addEventListener("unhandledrejection", function(e) {parent.postMessage({ type: 'iframe-error-promise', message:e.reason.message, error: e.reason.stack, id:${id} },'*');return false;});
     <\/script>
   `;
 
@@ -1173,8 +1188,8 @@ function injectErrorHandlerIntoHTML(htmlContent, id) {
 
 function formatError(e, appletInfoHTML){
     let lines = appletInfoHTML.split("\n");
-    let linesAround = `${lines[e.lineno - 11]}\n${lines[e.lineno - 10]}\n${lines[e.lineno - 9]}`
-    return `${e.message}:- at line number(${e.lineno}) and column number(${e.colno}) that is ${e.error.replace(/\n/g, " ")})).\nIt occurred in the block of code below:-\n${linesAround}`
+    let linesAround = `${lines[e.lineno - 15]}${lines[e.lineno - 14]}\n${lines[e.lineno - 13]}\n${lines[e.lineno - 12]}\n${lines[e.lineno - 11]} \/\/<-- Error occurred here\n${lines[e.lineno - 10]}\n${lines[e.lineno - 9]}\n${lines[e.lineno - 8]}\n${lines[e.lineno - 7]}`
+    return `${e.message}:- at line number(${e.lineno - 11}) and column number(${e.colno}) that is ${e.error.replace(/\n/g, " ")})).\nIt occurred in the block of code below:-\n${linesAround}`
 }
 
 const ai = document.querySelector("#ai");

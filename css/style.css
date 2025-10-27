@@ -517,7 +517,7 @@ pre{
     border-radius: var(--button-bounding);
     border: var(--border);
     border-top: none;
-    max-width: calc(100% - 1vh);
+    max-width: calc(100% - 2vh);
     max-height: 100vh;
     min-height: 50vh;
 }
