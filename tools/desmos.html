@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desmos Graph Embed</title>
+    <!-- Desmos API Script -->
+    <script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        #calculator {
+            width: 100%;
+            height: 100%;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 14px;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Initializing Graph...</div>
+    <div id="calculator"></div>
+
+    <script>
+        (function() {
+            // ---------------------------------------------------------
+            // CONFIGURATION & SCHEMA
+            // ---------------------------------------------------------
+            // This embed accepts a query parameter named 'q' (or 'latex').
+            // The value must be a URL-encoded string.
+            // Expressions are strictly separated by the newline character (\n).
+            //
+            // Example URL: 
+            //   index.html?q=y=x^2%0Ay=x
+            // 
+            // Supported Line Types:
+            // 1. Equations: y = x^2
+            // 2. Variable Definitions: a = 2
+            // 3. Points: (a, a^2)
+            // 4. Sliders: implied by undefined variables (e.g. y = mx + b implies sliders for m, b)
+            // ---------------------------------------------------------
+
+            var elt = document.getElementById('calculator');
+            var calculator = Desmos.GraphingCalculator(elt, {
+                keypad: true,
+                graphpaper: true,
+                expressions: true,
+                settingsMenu: true,
+                zoomButtons: true,
+                lockViewport: false,
+                invertedColors: true
+            });
+
+            // Parse Query Parameters
+            var params = new URLSearchParams(window.location.search);
+            
+            // We support 'q', 'expr', or 'latex' as the key
+            var rawData = params.get('q') || params.get('expr') || params.get('latex');
+
+            // INJECTION POINT FOR PREVIEW (React App uses this to pre-fill data without URL params)
+            var FALLBACK_DATA = ``; 
+
+            var dataToLoad = rawData || FALLBACK_DATA;
+
+            if (dataToLoad) {
+                // Split by newline to get individual expressions
+                var lines = dataToLoad.split('\n');
+                console.log(lines)
+                
+                var expressionObjects = lines.map(function(line, index) {
+                    var trimmed = line.trim();
+                    if (!trimmed) return null;
+                    
+                    // Basic heuristic: check if it looks like a note or a folder? 
+                    // For this strict schema, we assume everything is a latex expression.
+                    return {
+                        id: 'expr_' + index,
+                        latex: trimmed
+                    };
+                }).filter(function(item) { return item !== null; });
+
+                calculator.setExpressions(expressionObjects);
+            } else {
+                calculator.setExpression({ id: 'graph1', latex: 'y=x^2' });
+                calculator.setExpression({ id: 'note1', latex: 'x=1' }); // Initial demo
+            }
+
+            // Hide loading indicator once initialized
+            document.getElementById('loading').style.opacity = '0';
+        })();
+    </script>
+</body>
+</html>

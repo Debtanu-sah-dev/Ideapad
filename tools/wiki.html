@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiki Full Card</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        /* --- CSS Styles --- */
+        :root {
+            --primary-color:#FF5100;
+            --secondary-color:#fe9800;
+            --text-main:color-mix(in hsl, var(--primary-color), #fff 70%);
+            --bg-color: transparent;
+            --card-bg: transparent;
+            --text-secondary: var(--text-color);
+            --box-shadow:
+                inset -1vh -1vh 1vh 0 color-mix(in hsl, var(--primary-color), transparent 87.5%),
+                inset -0.25vh -0.25vh 0.5vh 0 color-mix(in hsl, var(--primary-color), transparent 81.25%)
+                /* 1vh 1vh 2vh 0 #78787842 */
+                /* 0vh 1vh 1vh -0.5vh var(--primary-color) */
+            ;
+            --reverse-box-shadow:
+                inset 1vh 1vh 1vh 0 color-mix(in hsl, var(--primary-color), transparent 87.5%),
+                inset 0.25vh 0.25vh 0.5vh 0 color-mix(in hsl, var(--primary-color), transparent 81.25%)
+                /* 1vh 1vh 2vh 0 #78787842 */
+            ;
+            --backdrop-filter-special:blur(2px) brightness(1.1) url(#frosted);
+            --noise: initial;
+            --border: 2px solid color-mix(in hsl, var(--primary-color), transparent 80%);
+            --border-magic: 2px solid color-mix(in srgb, color-mix(in hsl, var(--primary-color), transparent 80%), black 50%);
+            --button-bounding:calc(0.75rem + 0.75vh);
+        }
+
+        @font-face {
+            font-family: 'BlueMirage'; /* Define a name for your font */
+            src: url('../fonts/blue-mirage.otf') format('opentype'),
+                url('../fonts/blue-mirage.ttf') format('truetype'); /* Provide multiple formats for browser compatibility */
+            font-weight: normal; /* Define the font weight */
+            font-style:normal; /* Define the font style */
+            font-display: swap; /* Optional: Controls how font is displayed while loading */
+        }
+
+        *{
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* background-color: var(--bg-color); */
+            background-color: transparent;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Aligns to top so long content scrolls naturally */
+            min-height: 100vh;
+            color: var(--text-main);
+            font-family: "Ubuntu Mono", monospace;
+            font-size: 1.5rem;
+        }
+
+        /* The Card Container */
+        .card {
+            background-color: var(--card-bg);
+            width: 100%;
+            overflow: hidden;
+            display: none; /* Hidden until loaded */
+            align-items: flex-start;
+            padding: 2vh;
+            gap: 2vh;
+        }
+
+        /* Image Styling - High Quality */
+        .card-image {
+            flex-basis: 0%;
+            min-width: 25%;
+            display: block;
+            border-top: none;
+            border-radius: 2vh;
+            background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='0' y='0' width='100' height='100' fill='%23777777BF'/%3E%3Crect x='100' y='100' width='100' height='100' fill='%23555555BF'/%3E%3Crect x='100' y='0' width='100' height='100' fill='%23aaaaaaBF'/%3E%3Crect x='0' y='100' width='100' height='100' fill='%23ccccccBF'/%3E%3C/svg%3E") !important;
+            background-size: 3vw;
+            background-repeat: repeat;
+            overflow: hidden;
+            display: grid;
+            place-items: center;
+        }
+        .card-image > img{
+            object-fit: contain; /* Crops nicely to fill area */
+            width: 100%;
+            height: 100%;
+        }
+
+        .card-content {
+            flex-basis: 100%;
+            flex-grow: 1;
+        }
+
+        .card-header {
+            display: flex;
+        }
+
+        .wiki-logo {
+            width: 2rem;
+            height: 2rem;
+            margin-right: 2vh;
+        }
+
+        .card-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0;
+            color: var(--text-main);
+            line-height: 1.2;
+            font-family: 'BlueMirage';
+        }
+
+        /* The Full Text Area */
+        .card-text {
+            inline-size: 100%;
+            overflow-wrap: break-word;
+            line-height: 1.25em;
+            color: var(--text-secondary);
+            margin-bottom: calc(var(--button-bounding)*3);
+        }
+
+        button{
+            box-shadow: var(--box-shadow);
+            background-image: var(--noise);
+            padding: 2vh 2vh;
+            border-radius: 100vmax;
+            background-color: rgba(var(--r), var(--g), var(--b), 0.1);
+            font-size: 1.15rem;
+            cursor: pointer;
+            border: none;
+            user-select: none;
+            outline: none;
+            transition: box-shadow 0.2s, scale 0.2s;
+            backdrop-filter: var(--backdrop-filter-special) !important;
+            text-decoration: none;
+            color: var(--text-main);
+            display: block;
+            text-align: center;
+        }
+
+        button:disabled{
+            opacity: 50%;
+        }
+
+
+
+        button:hover{
+            box-shadow: var(--reverse-box-shadow);
+            scale: 1.2;
+        }
+
+        button:disabled:hover{
+            box-shadow: var(--box-shadow);
+            scale: 1;
+            cursor: not-allowed;
+        }
+
+        button:has(span.material-symbols-outlined){
+            aspect-ratio: 1 / 1;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 0.75vh;
+        }
+
+        .card-btn {
+            position: fixed;
+            bottom: 2vh;
+            left: 2vh;
+            box-shadow: var(--box-shadow);
+            background-image: var(--noise);
+            padding: 2vh 2vh;
+            border-radius: 100vmax;
+            background-color: rgba(var(--r), var(--g), var(--b), 0.1);
+            font-size: 1.15rem;
+            cursor: pointer;
+            border: none;
+            user-select: none;
+            outline: none;
+            transition: box-shadow 0.2s, scale 0.2s;
+            backdrop-filter: var(--backdrop-filter-special) !important;
+            text-decoration: none;
+            color: var(--text-main);
+            display: block;
+            text-align: center;
+        }
+
+        a:disabled{
+            opacity: 50%;
+        }
+
+
+
+        a:hover{
+            box-shadow: var(--reverse-box-shadow);
+            scale: 1.2;
+        }
+
+        a:disabled:hover{
+            box-shadow: var(--box-shadow);
+            scale: 1;
+            cursor: not-allowed;
+        }
+
+        a:has(span.material-symbols-outlined){
+            aspect-ratio: 1 / 1;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 0.75vh;
+        }
+        /* Loading & Error States */
+        .loader {
+            border: 1vh solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 7vh;
+            height: 7vh;
+            animation: spin 1s linear infinite;
+            margin-top: 45vh;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .error {
+            color: #ef4444;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: none;
+        }
+
+        a:has(span.material-symbols-outlined){
+            /* aspect-ratio: 1 / 1;
+            display: grid;
+            place-items: center;
+            text-align: center; */
+            /* padding: 0.75vh; */
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            gap: 2vh;
+        }
+        span.material-symbols-outlined{
+            font-size: 1.5rem;
+            font-family: 'Material Symbols Outlined' !important;
+        }
+
+        ::-webkit-scrollbar {
+            height: 1vh;
+            height: unset;
+            /* aspect-ratio: 1 / 1; */
+            border-radius: 100vmax;
+            backdrop-filter: var(--backdrop-filter);
+            width: 2vh;
+            background-color: transparent;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            height: 1vh;
+            height: unset;
+            /* aspect-ratio: 1 / 1; */
+            /* box-shadow: var(--box-shadow); */
+            background-image: var(--noise);
+            padding: 1vh 2vh;
+            background-color: rgba(var(--r), var(--g), var(--b), 0.1);
+            border-radius: 100vmax;
+            backdrop-filter: var(--backdrop-filter);
+            border:var(--border);
+            border-top: none;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+        box-shadow: var(--box-shadow);
+            background-image: var(--noise);
+            -webkit-appearance: none;
+            width: 2vh;
+            appearance: none;
+            border-radius: 100vmax;
+            background: #000;
+            cursor: pointer;
+            transition:0.2s !important;
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+        box-shadow: var(--reverse-box-shadow);
+        }
+
+        @media (max-aspect-ratio: 1/1) {
+            .card{
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .card-image{
+                width: 100%;
+                min-width: initial;
+            }
+        }
+    </style>
+</head>
+<body>
+    <svg style="display:none;">
+        <filter id="frosted">
+            <feImage href="data:image/png;base64,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" 
+                    preserveAspectRatio="none" />
+                        
+            <!-- <feTurbulence type="turbulence" baseFrequency="0.01" numOctaves="2" result="turbulence"/> -->
+    
+            <feDisplacementMap in="SourceGraphic"
+                in2="turbulence"    
+                            scale="200" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+    <div id="loader" class="loader"></div>
+    <div id="error" class="error"></div>
+
+    <div id="card" class="card">
+        <div class="card-image">
+            <img id="wiki-image" src="" alt="">
+        </div>
+        
+        <div class="card-content">
+            <div class="card-header">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/63/Wikipedia-logo.png" class="wiki-logo" alt="Wiki Logo">
+                <h1 id="wiki-title" class="card-title"></h1>
+            </div>
+            
+            <div id="wiki-text" class="card-text"></div>
+            
+        </div>
+    </div>
+    <a id="wiki-link" href="#" target="_blank" class="card-btn" tooltip="View Full Article"><span class="material-symbols-outlined">
+open_in_new
+</span></a>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
+     <script>
+        textToIconMap = {
+            "zoom in":"zoom_in",
+            "zoom out":"zoom_out",
+            "reset view":"arrows_output",
+        }
+        function iconify(element, forced = false){
+            if ((element.tagName == "BUTTON") || forced) {
+                if(textToIconMap[element.innerText.toLowerCase()] != null){
+                let text = element.innerText.toLowerCase();
+                let icon = document.createElement("span");
+                icon.classList.add("material-symbols-outlined")
+                icon.innerText = textToIconMap[text];
+                element.innerHTML = "";
+                element.dataset.type = text;
+                element.appendChild(icon)
+                }
+            }
+        }
+     </script>
+     <script src="../js/tool_tip.js"></script>
+    <script type="module">
+        import * as panzoom from "../js/panzoom.js";
+        // --- JavaScript Logic ---
+        panzoom.addView(document.querySelector(".card-image"))
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        async function fetchWikiData() {
+            const rawQuery = getQueryParam('title');
+            const loader = document.getElementById('loader');
+            const errorDiv = document.getElementById('error');
+            const card = document.getElementById('card');
+            const imgEl = document.getElementById('wiki-image');
+
+            if (!rawQuery) {
+                loader.style.display = 'none';
+                errorDiv.innerText = "Please add ?title=Topic to the URL";
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                // 1. OpenSearch API: Fixes typos (e.g., "einstien" -> "Albert Einstein")
+                const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(rawQuery)}&limit=1&namespace=0&format=json&origin=*`;
+                const searchRes = await fetch(searchUrl);
+                const searchJson = await searchRes.json();
+
+                if (!searchJson[1] || searchJson[1].length === 0) {
+                    throw new Error("Topic not found on Wikipedia.");
+                }
+
+                const exactTitle = searchJson[1][0];
+
+                // 2. Query API: Fetches Intro Text & High-Res Image
+                // - pithumbsize=600: Requests a large image (600px wide)
+                // - exintro: Only fetches the summary (remove this if you want the entire book-length article)
+                // - explaintext: Returns plain text (safer than HTML)
+                const detailsUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages|extracts&exintro&pithumbsize=4999&titles=${exactTitle}&origin=*`;
+
+                const detailsRes = await fetch(detailsUrl);
+                const detailsJson = await detailsRes.json();
+                const pages = detailsJson.query.pages;
+                const pageId = Object.keys(pages)[0];
+                const pageData = pages[pageId];
+
+                if (pageId === "-1") throw new Error("Details could not be loaded.");
+
+                // --- Render Data ---
+                document.getElementById('wiki-title').innerText = pageData.title;
+                document.getElementById('wiki-text').innerHTML = DOMPurify.sanitize(pageData.extract || "No summary available.");
+                document.getElementById('wiki-link').href = `https://en.wikipedia.org/?curid=${pageData.pageid}`;
+                console.log(detailsJson)
+                // Handle Image
+                if (pageData.thumbnail && pageData.thumbnail.source) {
+                    imgEl.src = pageData.thumbnail.source;
+                    imgEl.alt = pageData.title;
+                    imgEl.onload = () => {
+                        if((imgEl.naturalWidth/imgEl.naturalHeight) > 2.5){
+                            card.style.flexWrap="wrap";
+                            card.style.justifyContent="center";
+                            imgEl.style.minWidth="initial";
+                            imgEl.style.width="100%";
+                        }
+                    }
+                } else {
+                    // Hide image tag entirely if no image exists to avoid broken icon
+                    imgEl.style.display = 'none';
+                }
+
+                // Show Card
+                loader.style.display = 'none';
+                card.style.display = 'flex';
+
+            } catch (err) {
+                loader.style.display = 'none';
+                errorDiv.innerText = err.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        fetchWikiData();
+    </script>
+</body>
+</html>

@@ -349,10 +349,30 @@ class CanvasManager {
     }
 
     controlManager() {
+        let mouseDownForParent = false;
+        this.parent.addEventListener("mousedown", () => {
+            mouseDownForParent = true;
+        })
+        this.parent.addEventListener("mouseup", () => {
+            mouseDownForParent = false;
+        })
+        this.parent.addEventListener("mousemove", () => {
+            if (mouseDownForParent) {
+                let val = parseFloat(window.getComputedStyle(this.parent).getPropertyValue("--opacity"))
+    
+                if(val > 0){
+                    this.parent.style.setProperty("--opacity", val - 2 + "%")
+                }
+            }
+        })
         this.canvasElement.addEventListener("mousedown", (e) => {
             this.mouseDown(e);
         })
         this.parent.addEventListener("contextmenu", (e) => {
+            if (e.pointerType == "touch") {
+                e.preventDefault();
+                return;
+            }
             this.contextMenu(e);
         })
         this.parent.addEventListener("mouseleave", (e) => {
@@ -586,6 +606,7 @@ class SelectionInterface{
         this.scaleBob.classList.add("scaleBob");
         this.scaleBob.innerText = "scalebob";
         this.imageBob = document.createElement("button");
+        this.imageBob.setAttribute("tooltip", "Seek")
         this.imageBob.classList.add("imageBob");
         this.imageBob.innerText = "imagebob";
         this.initialEditorConfig = {
@@ -593,7 +614,8 @@ class SelectionInterface{
             scaleFactor:1,
             aspectRatioWbyH:1,
             rotation:0,
-            deltaRotation: 0
+            deltaRotation: 0,
+            lastD:null
         };
         this.editorContainer = document.createElement("div");
         this.editorContainer.classList.add("editorContainer");
@@ -676,7 +698,13 @@ class SelectionInterface{
             if (this.canScale) {
                 let d = dist(this.editorContainer.offsetLeft, this.editorContainer.offsetTop, e.x, e.y);
                 let t = this.initialEditorConfig.t;
-                this.initialEditorConfig.scaleFactor = (2*d*Math.sin(t))/this.editorContainer.offsetWidth;
+                if(this.initialEditorConfig.lastD == null){
+                    this.initialEditorConfig.scaleFactor = (2*d*Math.sin(t))/this.editorContainer.offsetWidth;
+                }
+                else{
+                    this.initialEditorConfig.scaleFactor = d/this.initialEditorConfig.lastD;
+                }
+                this.initialEditorConfig.lastD = d;
                 console.log(this.initialEditorConfig.scaleFactor)
                 // this.editorContainer.style.width = e.x - this.editorContainer.offsetLeft + this.editorContainer.offsetWidth/2 + "px";
                 // this.editorContainer.style.height = this.editorContainer.offsetWidth/this.initialEditorConfig.aspectRatioWbyH + "px";
@@ -1277,7 +1305,7 @@ class ShapeEditor{
                     this.manager.shapeMode = false;
                 }
             })
-            this.editCanvas.addEventListener("leave", (e) => {
+            this.editCanvas.addEventListener("mouseleave", (e) => {
                 if((e.button == 0) && this.editMode){
                     this.editMode = false;
                     this.editCanvasCtx.clearRect(0, 0, this.editCanvas.width, this.editCanvas.height);
@@ -1444,7 +1472,7 @@ class ConstraintDriver{
             // this.manager.mouseMove(e);
         })
 
-        this.toggleActive(true);
+        // this.toggleActive(true);
     }
 
     toggleActive(forcedActive = false){
@@ -1965,7 +1993,7 @@ class CompassConstraint extends Constraint{
             this.size = this.pinEnd.offsetHeight/2;
             this.recalculate();
             this.inverseKinematics();
-            this.driver.toggleActive();
+            // this.driver.toggleActive();
         })
         document.addEventListener("DOMContentLoaded", () => {
             this.recalculate();
@@ -2361,17 +2389,22 @@ class CanvasCustomizationInterface {
         this.interfaceWindowBackdrop.classList.add("interfaceBackdrop");
         this.colorPicker1 = document.createElement("input");
         this.colorPicker1.type = "color";
+        this.colorPicker1.setAttribute("tooltip", "Stroke Color")
         this.colorPicker1.value = getComputedStyle(document.documentElement).getPropertyValue('--penColor');
         this.colorPicker2 = document.createElement("input");
         this.colorPicker2.type = "color";
+        this.colorPicker2.setAttribute("tooltip", "Fill Color")
         this.colorPicker2.value = "#ffffff"
         this.interfaceWindow.appendChild(this.colorPicker1);
         this.interfaceWindow.appendChild(this.colorPicker2);
         //Fill Type Selector
         this.fillTypeSelector = document.createElement("button");
         this.fillTypeSelector.innerText = "Stroke";
+        this.fillTypeSelector.setAttribute("tooltip", "Shape type: Stroke Only")
+        this.fillTypeSelector.setAttribute("tooltip-position", "bottom")
         this.interfaceWindow.appendChild(this.fillTypeSelector);
         this.thicknessSlider = document.createElement("input");
+        this.thicknessSlider.setAttribute("tooltip", "Change stroke width")
         this.thicknessSlider.type = "range";
         this.thicknessSlider.value = 5;
         this.thicknessSlider.step = 1;
@@ -2382,60 +2415,82 @@ class CanvasCustomizationInterface {
         // Triangle
         this.triangleShape = document.createElement("button");
         this.triangleShape.innerText = "Triangle";
+        this.triangleShape.setAttribute("tooltip", "Triangle")
         this.interfaceWindow.appendChild(this.triangleShape);
 
         //Free Shape
         this.freeShape = document.createElement("button");
         this.freeShape.innerText = "Free Shape";
+        this.freeShape.setAttribute("tooltip", "Free shape")
         this.interfaceWindow.appendChild(this.freeShape);
 
         //Circle Shape
         this.circleShape = document.createElement("button");
         this.circleShape.innerText = "Circle";
+        this.circleShape.setAttribute("tooltip", "Circle")
         this.interfaceWindow.appendChild(this.circleShape);
 
         // Line Shape
         this.lineShape = document.createElement("button");
         this.lineShape.innerText = "Line";
+        this.lineShape.setAttribute("tooltip", "Line")
         this.interfaceWindow.appendChild(this.lineShape);
 
         // Square
         this.squareShape = document.createElement("button");
         this.squareShape.innerText = "Square";
+        this.squareShape.setAttribute("tooltip", "Square")
         this.interfaceWindow.appendChild(this.squareShape);
 
         // Rectangle
         this.rectangleShape = document.createElement("button");
         this.rectangleShape.innerText = "Rectangle";
+        this.rectangleShape.setAttribute("tooltip", "Rectangle")
         this.interfaceWindow.appendChild(this.rectangleShape);
+
+        //Image
+        this.imageShape = document.createElement("input");
+        this.imageShape.innerText = "Image";
+        this.imageShape.setAttribute("tooltip", "Upload image")
+        this.imageShape.type = "file"
+        this.imageShape.accept = "image/*"
+        this.interfaceWindow.appendChild(this.imageShape);
+        this.imageShape.style.setProperty("grid-column", "span 6")//grid-column: span 3;
+        this.imageShape.style.setProperty("width", "100%")//grid-column: span 3;
 
         this.interfaceWindow.appendChild(document.createElement("hr"));
         // Clear
         this.clear = document.createElement("button");
         this.clear.innerText = "Clear";
+        this.clear.setAttribute("tooltip", "Clear sketch")
         this.interfaceWindow.appendChild(this.clear);
         
         // Undo
         this.undo = document.createElement("button");
         this.undo.innerText = "Undo";
+        this.undo.setAttribute("tooltip", "Undo")
         this.interfaceWindow.appendChild(this.undo);
         
         // Redo
         this.redo = document.createElement("button");
         this.redo.innerText = "Redo";
+        this.redo.setAttribute("tooltip", "Redo")
         this.interfaceWindow.appendChild(this.redo);
         
         // Eraser
         this.eraser = document.createElement("button");
         this.eraser.innerText = "Eraser";
+        this.eraser.setAttribute("tooltip", "Eraser")
         this.interfaceWindow.appendChild(this.eraser);
 
         this.select = document.createElement("button");
         this.select.innerText = "select";
+        this.select.setAttribute("tooltip", "Select")
         this.interfaceWindow.appendChild(this.select);
 
         this.pan = document.createElement("button");
         this.pan.innerText = "Pan";
+        this.pan.setAttribute("tooltip", "Pan")
         this.interfaceWindow.appendChild(this.pan);
 
         this.interfaceWindow.appendChild(document.createElement("hr"));
@@ -2450,6 +2505,7 @@ class CanvasCustomizationInterface {
             if(this.touchscreenInterface){
                 this.touchscreenInterface.innerHTML = "";
                 this.touchscreenInterface.innerText = "unselect";
+                this.touchscreenInterface.setAttribute("tooltip", "Stop Selection");
                 // this.pan.querySelector("span").innerText = "do_not_touch"
                 iconify(this.touchscreenInterface)
             }
@@ -2463,6 +2519,7 @@ class CanvasCustomizationInterface {
                 if(this.touchscreenInterface){
                     this.touchscreenInterface.innerHTML = "";
                     this.touchscreenInterface.innerText = "Stop Panning"
+                    this.touchscreenInterface.setAttribute("tooltip", "Stop Panning");
                     this.pan.querySelector("span").innerText = "do_not_touch"
                     iconify(this.touchscreenInterface)
                 }
@@ -2508,6 +2565,7 @@ class CanvasCustomizationInterface {
             this.manager.strokes.push(shape);
             if(this.touchscreenInterface){
                 this.touchscreenInterface.querySelector("span").innerText = "edit_off"
+                this.touchscreenInterface.setAttribute("tooltip", "Exit Free shape");
             }
         })
         this.circleShape.addEventListener("click", () => {
@@ -2534,6 +2592,43 @@ class CanvasCustomizationInterface {
             // }
             this.manager.strokes.push(new Shape("rectangle", this.manager.canvasCtx, this.shapeProperties, null, this.manager, null));
         })
+        this.imageShape.addEventListener("change", (event) => {
+            // console.log(event);
+            if(!event.target.files[0].type.includes("image")){
+                return;
+            }
+            const Reader = new FileReader();
+            Reader.onload = (e) => {
+                let dataUrl = e.target.result;
+                let rect = new Shape("rectangle", this.manager.canvasCtx, this.manager.shapeProperties, null, this.manager, dataUrl);
+                rect.image.onload = () => {
+                    rect.geometryInfo.height = this.manager.canvasElement.width/2*(rect.image.naturalHeight/rect.image.naturalWidth);
+                    this.manager.selectionInterface.select();
+                    if(this.manager.canvasCustomizationInterface.touchscreenInterface){
+                    this.manager.canvasCustomizationInterface.touchscreenInterface.innerHTML = "";
+                    this.manager.canvasCustomizationInterface.touchscreenInterface.innerText = "unselect";
+                    // this.pan.querySelector("span").innerText = "do_not_touch"
+                    iconify(this.manager.canvasCustomizationInterface.touchscreenInterface)
+                    }
+                    this.manager.selectionInterface.selectedObjects = [rect];
+                    this.manager.selectionInterface.editStageConverter();
+                    this.manager.render();
+                }
+                rect.shapeEditor.killEditor();
+                rect.geometryInfo = {
+                    rotation:0,
+                    width: this.manager.canvasElement.width/2,
+                    height: this.manager.canvasElement.width/2*(rect.image.naturalHeight/rect.image.naturalWidth),
+                    x:(-1) *this.manager.translation.x,
+                    y:(-1) * this.manager.translation.y
+                };
+                this.manager.strokes.push(rect);
+            }
+            Reader.onerror = (errorBlob) => {
+                console.log(errorBlob);
+            }
+            Reader.readAsDataURL(event.target.files[0]);
+        })
         this.eraser.addEventListener("click", () => {
             // if (this.manager.shapeMode) {
             //     return;
@@ -2546,6 +2641,7 @@ class CanvasCustomizationInterface {
             this.manager.eraserMode = true;
             if(this.touchscreenInterface){
                 this.touchscreenInterface.querySelector("span").innerText = "ink_eraser_off"
+                this.touchscreenInterface.setAttribute("tooltip", "Stop Erasing");
             }
             // this.eraser.querySelector("span").innerText = "ink_eraser_off";
             this.inactive();
@@ -2593,14 +2689,17 @@ class CanvasCustomizationInterface {
                 case 2:
                     this.shapeProperties.strokeColor = this.colorPicker1.value;
                     this.shapeProperties.fillColor = this.colorPicker2.value;
+                    this.fillTypeSelector.setAttribute("tooltip", "Shape type: Stroke and Fill")
                     break;
                 case 0:
                     this.shapeProperties.strokeColor = this.colorPicker1.value;
                     this.shapeProperties.fillColor = false;
+                    this.fillTypeSelector.setAttribute("tooltip", "Shape type: Stroke Only")
                     break;
                 case 1:
                     this.shapeProperties.strokeColor = false;
                     this.shapeProperties.fillColor = this.colorPicker2.value;
+                    this.fillTypeSelector.setAttribute("tooltip", "Shape type: Fill Only")
                     break;
             
                 default:
@@ -2615,12 +2714,9 @@ class CanvasCustomizationInterface {
                 // console.log(this.manager.constraintWindow.constraints, too)
                 this[ "tool" + tool.label] = document.createElement("button");
                 this[ "tool" + tool.label].innerText = tool.label;
+                this[ "tool" + tool.label].setAttribute("tooltip", tool.label)
                 this.interfaceWindow.appendChild(this[ "tool" + tool.label]);
                 this[ "tool" + tool.label].addEventListener("click", () => {
-                    if(toolIndex == 2){
-                        tool.recalculate();
-                        tool.inverseKinematics();
-                    }
                     if(this.manager.constraintWindow.currentConstraint == toolIndex){
                         this.manager.constraintWindow.currentConstraint = toolIndex;
                         this.manager.constraintWindow.toggleActive();
@@ -2629,11 +2725,17 @@ class CanvasCustomizationInterface {
                         this.manager.constraintWindow.currentConstraint = toolIndex;
                         this.manager.constraintWindow.toggleActive(true);
                     }
+                    if(toolIndex == 2){
+                        tool.size = tool.pinEnd.offsetHeight/2;
+                        tool.recalculate();
+                        tool.inverseKinematics();
+                    }
                 })
             }
         // }
         this.touchscreenInterface = document.createElement("button")
         this.touchscreenInterface.innerText = "Tools"
+        this.touchscreenInterface.setAttribute("tooltip", "Tools");
         document.querySelector("#ai").appendChild(this.touchscreenInterface)
         this.touchscreenInterface.addEventListener("click", () => {
             if(this.latestFreeShape != null){
@@ -2656,7 +2758,8 @@ class CanvasCustomizationInterface {
             this.manager.selectionInterface.unselect();
             this.manager.eraserMode = false;
             if(this.touchscreenInterface){
-                this.touchscreenInterface.innerText = "Tools"
+                this.touchscreenInterface.innerText = "Tools",
+                this.touchscreenInterface.setAttribute("tooltip", "Tools");
                 iconify(this.touchscreenInterface);
                 this.pan.querySelector("span").innerText = "pan_tool"
             }
@@ -2678,9 +2781,9 @@ class CanvasCustomizationInterface {
         if(this.activeStatus){
             this.activeStatus = false;
             this.interfaceWindowBackdrop.style.display = "none";
-            this.interfaceWindow.classList.remove("active")
+            this.interfaceWindow.classList.remove("active");
             setTimeout(() => {
-                this.interfaceWindow.style.display = "none"
+                this.interfaceWindow.style.display = "none";
             }, 200)
         }
     }

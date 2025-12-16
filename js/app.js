@@ -1,5 +1,11 @@
 const canvas = document.querySelector("#canvas");
+const LoadingHTML = `<!DOCTYPE html><html><head><style> @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap'); body{ display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; height: 100vh; color: white; overflow: hidden; } :root{ --primary-color:#ff5100; font-family: "Ubuntu Mono", monospace; } @keyframes bounce { 0% { transform: translateY(0); } 50% { transform: translateY(-5vh); } 100% { transform: translateY(0); } } @keyframes bounceAfterPseudo { 0% { bottom: -10vh; transform: scaleX(1) scaleY(1); opacity: 0.5; filter: blur(1vh); } 50% { bottom: -15vh; transform: scaleX(1.2) scaleY(1.1); opacity: 0.33; filter: blur(3vh); } 100% { bottom: -10vh; transform: scaleX(1) scaleY(1); opacity:0.5; filter: blur(1vh); } } .ball{ background: black; width: 10vh; height: 10vh; border-radius:100vmax; background-image: radial-gradient(circle at 5vh 3vh, #ff5100, #000); animation: bounce 1s infinite ease-in-out; } .ball::after { content: ""; position: absolute; bottom: -12vh; left: 0; width: 100%; height: 100%; border-radius: 100vmax; background-image: radial-gradient(circle at 5vh 3vh, #ff510085, #000); opacity: 0.5; filter:blur(1vh); pointer-events: none; animation: bounceAfterPseudo 1s infinite ease-in-out; } .loader-text { font-size: 1.5rem; font-weight: bold; letter-spacing: 0.05em; display: flex; align-items: center; height: 2rem; text-shadow: 0 0 8px rgba(255, 81, 0, 0.3); } .prefix { color: var(--primary-color); margin-right: 10px; } .cursor { display: inline-block; width: 10px; height: 1.2em; background-color: var(--primary-color); margin-left: 5px; animation: blink 1s step-end infinite; } @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } } </style></head><body><div class="ball"></div><div class="loader-text"><span class="prefix">></span><span id="typewriter"></span><span class="cursor"></span></div><script> const phrases = [ 
+  ${QUOTES.map(e => `"${e}"`)} ]; const el = document.getElementById('typewriter'); let phraseIdx = Math.floor((Math.random() * phrases.length)); let charIdx = 0; let isDeleting = false; let timeoutId = null; const TYPING_SPEED = 40; const DELETING_SPEED = 20; const PAUSE_END = 4000; const PAUSE_START = 500; function loop() { const currentPhrase = phrases[phraseIdx]; if (isDeleting) { el.textContent = currentPhrase.substring(0, charIdx); charIdx--; if (charIdx < 0) { isDeleting = false; charIdx = 0; phraseIdx = Math.floor((Math.random() * phrases.length)); timeoutId = setTimeout(loop, PAUSE_START); } else { timeoutId = setTimeout(loop, DELETING_SPEED); } } else { el.textContent = currentPhrase.substring(0, charIdx + 1); charIdx++; if (charIdx === currentPhrase.length) { isDeleting = true; timeoutId = setTimeout(loop, PAUSE_END); } else { timeoutId = setTimeout(loop, TYPING_SPEED); } } } document.addEventListener('DOMContentLoaded', () => { loop(); }); </script></body></html>`;
 var Canvas = new CanvasManager(canvas);
+
+window.onload = () => {
+  Canvas.fitCanvasElement();
+};
 const renderer = new marked.Renderer();
 renderer.heading = (text, level) => `<h${level}>${text}</h${level}>`;
 // renderer.code = (code, infostring) => `<p class="codehead">${infostring === null ||  infostring === undefined? "" : infostring}</p><pre class="language-${infostring}"><code class="language-${infostring}" data-prismjs-copy="Copy">${code.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</code></pre>`;
@@ -193,7 +199,17 @@ let textToIconMap = {
   "imagebob": "image",
   "insert image":"add_photo_alternate",
   "image search":"image_search",
-  "copy": "content_copy"
+  "copy": "content_copy",
+  "quiz":"quiz",
+  "quiz_add":"note_stack_add",
+  "zoom in":"zoom_in",
+  "zoom out":"zoom_out",
+  "reset view":"arrows_output",
+  "save":"check",
+  "cancel": "block",
+  "open":"play_arrow",
+  "submit":"send",
+  "report": "bar_chart"
 }
 
 
@@ -264,6 +280,50 @@ function setupInputVariableUpdates() {
   // Start observing the entire document body for new nodes being added.
   observer.observe(document.body, { childList: true, subtree: true });
 }
+
+const pair = {
+  "{":"}",
+  "(":")",
+  "[":"]"
+}
+
+function stripNestedParentheses(text){
+  let stream = text.split("");
+  let nesting_level = 0;
+  let chunk = [""];
+  for(let token of stream){
+    if(Object.keys(pair).includes(token)){
+      if(nesting_level == 0){
+        chunk.push("")
+      }
+      nesting_level++;
+    }
+    else if(Object.values(pair).includes(token)){
+      nesting_level--;
+      if(nesting_level == 0){
+        chunk[chunk.length - 1] = chunk[chunk.length - 1] + token;
+        chunk.push("")
+        continue;
+      }
+    }
+    chunk[chunk.length - 1] = chunk[chunk.length - 1] + token;
+  }
+  let filtered = chunk.map(e => {
+    if(Object.keys(pair).includes(e[0])){
+      if((e[0] + e[1] + e[e.length - 1] + e[e.length - 2]) == "(())"){
+        return e[0] + e[1] + e.replace(/[\{|\}|\(|\)\[|\]]/g, "") + e[e.length - 2] + e[e.length - 1]
+      }
+      else{
+        return e[0] + e.replace(/[\{|\}|\(|\)\[|\]]/g, "") + e[e.length - 1]
+      }
+    }
+    else{
+      return e;
+    }
+  })
+  return filtered.join("");
+}
+
 
 // Run the setup function after the DOM is fully loaded.
 document.addEventListener('DOMContentLoaded', setupInputVariableUpdates);

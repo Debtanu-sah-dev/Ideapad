@@ -55,6 +55,7 @@ const STD_CDN = [
     "cdnlink": "https://unpkg.com/delaunator@5.0.0/delaunator.min.js"
   },
   {
+    
     "name": "decimal.js",
     "description": "Arbitrary-precision decimal arithmetic library for deterministic, accurate calculations in simulations where IEEE floating-point errors are unacceptable.",
     "cdnlink": "https://cdnjs.cloudflare.com/ajax/libs/decimal.js/9.0.0/decimal.min.js"
@@ -367,7 +368,7 @@ const STD_CDN = [
   {
     "name": "plotly.js",
     "description": "Interactive scientific plotting library with 2D/3D charts and animations; ideal for exploratory simulation visualization and streaming.",
-    "cdnlink": "https://cdn.plot.ly/plotly-latest.min.js"
+    "cdnlink": "https://cdn.plot.ly/plotly-3.3.0.min.js"
   },
   {
     "name": "poly-decomp.js",
