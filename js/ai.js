@@ -4,13 +4,13 @@ import * as htmlToImage from 'https://cdn.jsdelivr.net/npm/html-to-image@1.11.11
 import * as toon from 'https://esm.run/@toon-format/toon';
 import { addView } from "./panzoom.js";
 // console.log(Type);
-const genAI = new GoogleGenerativeAI(API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyDU14zy5uEAGTpNyjupp4guZIhG_4nOoyU");
 
 const generationConfig = {
-    model:"gemini-flash-latest",
+    model:"gemini-3-pro-preview",
     // model:"gemini-2.5-pro-exp-03-25",
     generationConfig:{
-        responseMimeType: 'application/json',
+        responseMimeType: 'application/json', 
         responseSchema: {
             "type": "object",
   "properties": {
@@ -43,7 +43,7 @@ const generationConfig = {
     }
   };
 const generationConfigForRectification = {
-    model:"gemini-flash-latest",
+    model:"gemini-3-pro-preview",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -200,6 +200,7 @@ const generationConfigForQuiz = {
    }
 };
 const model = genAI.getGenerativeModel({model: "gemini-flash-latest"});
+const modelPro = genAI.getGenerativeModel({model: "gemini-3-pro-preview"});
 const modelApplet = genAI.getGenerativeModel(generationConfig);
 const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
 const modelDiagram = genAI.getGenerativeModel(generationConfigForDiagram);
@@ -1147,7 +1148,7 @@ class Quiz{
     let report = null;
     submitQuiz.addEventListener("click", async () => {
       reportDialog.showModal();
-      if(report == null){
+      if((report == null) && (reportDialog.querySelector("iframe") == null)){
         let loader = document.createElement("iframe");
         loader.classList.add("quizLoader");
         loader.srcdoc = LoadingHTML;
@@ -1916,7 +1917,7 @@ Ask yourself: *"If I search for this object on a free low-poly asset store (like
               this.checkpoint = 2;
               console.log(this.checkpoint)
           case 2:
-            let recipe = await model.generateContentStream([structuredClone(Ai.imageDataURL), recipePrompt]);
+            let recipe = await modelPro.generateContentStream([structuredClone(Ai.imageDataURL), recipePrompt]);
             let completeResponse = "";
             let firstResponse = true;
             for await(const chunk of recipe.stream){
