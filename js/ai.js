@@ -56,7 +56,7 @@ const generationConfigForRectification = {
    }
 };
 const generationConfigForDiagram = {
-    model:"gemini-flash-latest",
+    model:"gemini-3-flash-preview",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -85,7 +85,7 @@ const generationConfigForDiagram = {
    }
 };
 const generationModelRequirement = {
-    model:"gemini-flash-latest",
+    model:"gemini-3-flash-preview",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -125,7 +125,7 @@ const generationModelRequirement = {
 }
 
 const generationConfigForQuiz = {
-    model:"gemini-flash-latest",
+    model:"gemini-3-flash-preview",
     generationConfig:{
         responseMimeType: 'application/json',
         responseSchema: {
@@ -199,7 +199,7 @@ const generationConfigForQuiz = {
 }
    }
 };
-const model = genAI.getGenerativeModel({model: "gemini-flash-latest"});
+const model = genAI.getGenerativeModel({model: "gemini-3-flash-preview"});
 const modelPro = genAI.getGenerativeModel({model: "gemini-3-pro-preview"});
 const modelApplet = genAI.getGenerativeModel(generationConfig);
 const modelRectify = genAI.getGenerativeModel(generationConfigForRectification);
@@ -1813,104 +1813,104 @@ NOTE:- If you are using a string with the innerContent being </script> then esca
         switch (this.checkpoint) {
           case 0:
             //** FFExpermental
-            const modelReq = await modelModelQuery.generateContent([structuredClone(Ai.imageDataURL)], `**Role:** You are a Lead 3D Asset Supervisor specializing in **Low-Poly / Prototype** environments.
+//             const modelReq = await modelModelQuery.generateContent([structuredClone(Ai.imageDataURL)], `**Role:** You are a Lead 3D Asset Supervisor specializing in **Low-Poly / Prototype** environments.
 
-**Objective:** Analyze the input and generate a strictly formatted JSON manifest of 3D assets.
+// **Objective:** Analyze the input and generate a strictly formatted JSON manifest of 3D assets.
 
-### PART 1: THE NAMING PROTOCOL (Rigorous Logic)
+// ### PART 1: THE NAMING PROTOCOL (Rigorous Logic)
 
-You must determine the \`asset_name\` by applying the **"Visual Essentialism Test"**.
-Ask yourself: *"If I search for this object on a free low-poly asset store (like poly.pizza), would a generic model suffice?"*
+// You must determine the \`asset_name\` by applying the **"Visual Essentialism Test"**.
+// Ask yourself: *"If I search for this object on a free low-poly asset store (like poly.pizza), would a generic model suffice?"*
 
-**RULE A: The "Manufactured Object" Reduction (Generic Geometry)**
+// **RULE A: The "Manufactured Object" Reduction (Generic Geometry)**
 
-  * **Logic:** For cars, planes, electronics, or furniture, specific brands or models are **irrelevant** at a distance or in low-poly style. You **MUST** reduce them to their class name.
-  * *Reasoning:* A "Ferrari" and a "Ford" both look like a "car" when squinting.
-      * \`Ferrari\` $\rightarrow$ **car**
-      * \`De Havilland Plane\` $\rightarrow$ **plane**
-      * \`iPhone 15\` $\rightarrow$ **phone**
+//   * **Logic:** For cars, planes, electronics, or furniture, specific brands or models are **irrelevant** at a distance or in low-poly style. You **MUST** reduce them to their class name.
+//   * *Reasoning:* A "Ferrari" and a "Ford" both look like a "car" when squinting.
+//       * \`Ferrari\` $\rightarrow$ **car**
+//       * \`De Havilland Plane\` $\rightarrow$ **plane**
+//       * \`iPhone 15\` $\rightarrow$ **phone**
 
-**RULE B: The "Celestial Body" Exception (Specific Texture)**
+// **RULE B: The "Celestial Body" Exception (Specific Texture)**
 
-  * **Logic:** For Major Solar System bodies, a generic sphere is **insufficient** because their identity is defined by specific surface features (continents, craters). You **MUST** keep the specific name.
-  * *Reasoning:* A generic "planet" does not look like "Earth". A generic "moon" does not look like "Phobos".
-      * \`Planet Earth\` $\\rightarrow$ **Earth** (IRREDUCIBLE)
-      * \`Jupiter\` $\\rightarrow$ **Jupiter** (IRREDUCIBLE)
-  * **Sub-Clause:** Distant cosmic objects (random stars, black holes) lack distinct surface features and **MUST** be reduced.
-      * \`Star Betelgeuse\` $\\rightarrow$ **star**
-      * \`Black Hole Sgr A*\` $\\rightarrow$ **blackhole**
+//   * **Logic:** For Major Solar System bodies, a generic sphere is **insufficient** because their identity is defined by specific surface features (continents, craters). You **MUST** keep the specific name.
+//   * *Reasoning:* A generic "planet" does not look like "Earth". A generic "moon" does not look like "Phobos".
+//       * \`Planet Earth\` $\\rightarrow$ **Earth** (IRREDUCIBLE)
+//       * \`Jupiter\` $\\rightarrow$ **Jupiter** (IRREDUCIBLE)
+//   * **Sub-Clause:** Distant cosmic objects (random stars, black holes) lack distinct surface features and **MUST** be reduced.
+//       * \`Star Betelgeuse\` $\\rightarrow$ **star**
+//       * \`Black Hole Sgr A*\` $\\rightarrow$ **blackhole**
 
-**RULE C: Word Count Hard Limits**
+// **RULE C: Word Count Hard Limits**
 
-  * **Constraint:** **STRICTLY 1 WORD.** (Zero exceptions).
-  * **The "Ambiguity" Clause:** You may use **MAXIMUM 2 WORDS** *only* if a single word creates a critical misunderstanding of the object's shape(you should not use 2 words if you want to do the following:- Ex. "car drawing" is not the correct way to use 2 word instead do "car").
-      * *Allowed:* \`fighter jet\` (If "jet" implies a passenger plane).
-      * *Allowed:* \`pine tree\` (If "tree" implies a generic round deciduous tree).
-      * *Forbidden:* \`red car\` (Adjective is not structural).
-      * *Forbidden:* \`wooden table\` (Material is not structural).
-  * **Syntax:**
-      * NO Underscores (\`racing_car\`, \`car_side_profile_sketch\` = ILLEGAL).
-      * NO Adjectives (\`red\`, \`big\`, \`wooden\` = ILLEGAL).
-      * NO Verbs (\`flying\`, \`broken\` = ILLEGAL).
-      * NO Determiners (\`the\`, \`a\` = ILLEGAL).
-      * NO Preposition (\`in\`, \`on\`, \`at\` = ILLEGAL)
-  * **Normalization:**
-      * \`simple_pendulum\` $\\rightarrow$ \`pendulum\`
-      * \`de havilland plane\` $\\rightarrow$ \`plane\`
+//   * **Constraint:** **STRICTLY 1 WORD.** (Zero exceptions).
+//   * **The "Ambiguity" Clause:** You may use **MAXIMUM 2 WORDS** *only* if a single word creates a critical misunderstanding of the object's shape(you should not use 2 words if you want to do the following:- Ex. "car drawing" is not the correct way to use 2 word instead do "car").
+//       * *Allowed:* \`fighter jet\` (If "jet" implies a passenger plane).
+//       * *Allowed:* \`pine tree\` (If "tree" implies a generic round deciduous tree).
+//       * *Forbidden:* \`red car\` (Adjective is not structural).
+//       * *Forbidden:* \`wooden table\` (Material is not structural).
+//   * **Syntax:**
+//       * NO Underscores (\`racing_car\`, \`car_side_profile_sketch\` = ILLEGAL).
+//       * NO Adjectives (\`red\`, \`big\`, \`wooden\` = ILLEGAL).
+//       * NO Verbs (\`flying\`, \`broken\` = ILLEGAL).
+//       * NO Determiners (\`the\`, \`a\` = ILLEGAL).
+//       * NO Preposition (\`in\`, \`on\`, \`at\` = ILLEGAL)
+//   * **Normalization:**
+//       * \`simple_pendulum\` $\\rightarrow$ \`pendulum\`
+//       * \`de havilland plane\` $\\rightarrow$ \`plane\`
 
------
+// -----
 
-### PART 2: THE DECOMPOSITION LOGIC (Animation Dependent)
+// ### PART 2: THE DECOMPOSITION LOGIC (Animation Dependent)
 
-**1. The "Cohesive Unit" Default**
+// **1. The "Cohesive Unit" Default**
 
-  * Treat objects as **indivisible wholes** by default (e.g., Car, Forest, House).
-  * *Input:* "A car driving fast." $\rightarrow$ Output: \`car\`.
+//   * Treat objects as **indivisible wholes** by default (e.g., Car, Forest, House).
+//   * *Input:* "A car driving fast." $\rightarrow$ Output: \`car\`.
 
-**2. The "Animation" Override**
+// **2. The "Animation" Override**
 
-  * Only break an object into parts if the requirements explicitly describe independent movement of those parts.
-  * *Input:* "A car where the door opens." $\\rightarrow$ Output: \`chassis\`, \`door\`.
+//   * Only break an object into parts if the requirements explicitly describe independent movement of those parts.
+//   * *Input:* "A car where the door opens." $\\rightarrow$ Output: \`chassis\`, \`door\`.
 
-**3. The "Procedural" Override**
+// **3. The "Procedural" Override**
 
-  * If the requirement implies generating a group (e.g., "Create a forest"), list the atomic unit.
-  * *Input:* "Generate a forest." $\\rightarrow$ Output: \`tree\`, \`rock\`.
+//   * If the requirement implies generating a group (e.g., "Create a forest"), list the atomic unit.
+//   * *Input:* "Generate a forest." $\\rightarrow$ Output: \`tree\`, \`rock\`.
 
------
+// -----
 
-### PART 3: OUTPUT FORMAT (JSON)
+// ### PART 3: OUTPUT FORMAT (JSON)
 
-**Constraints:**
+// **Constraints:**
 
-1.  **asset_name:** Common nouns (mostly). Proper nouns allowed ONLY for Rule B (Planets). No underscores. Max 2 words (prefer 1).
-2.  **description:** Strictly < 20 words. Describes placement/function.
+// 1.  **asset_name:** Common nouns (mostly). Proper nouns allowed ONLY for Rule B (Planets). No underscores. Max 2 words (prefer 1).
+// 2.  **description:** Strictly < 20 words. Describes placement/function.
 
-**EXAMPLES:**
+// **EXAMPLES:**
 
-**❌ INCORRECT:**
+// **❌ INCORRECT:**
 
-\`\`\`json
-[
-  { "asset_name": "Ferrari_488", "description": "Red car." }, // ERROR: Specific Brand
-  { "asset_name": "planet", "description": "It is Earth." },   // ERROR: Earth is irreducible
-  { "asset_name": "simple_pendulum", "description": "Swinging." } // ERROR: Underscore
-]
-\`\`\`
+// \`\`\`json
+// [
+//   { "asset_name": "Ferrari_488", "description": "Red car." }, // ERROR: Specific Brand
+//   { "asset_name": "planet", "description": "It is Earth." },   // ERROR: Earth is irreducible
+//   { "asset_name": "simple_pendulum", "description": "Swinging." } // ERROR: Underscore
+// ]
+// \`\`\`
 
-**✅ CORRECT:**
+// **✅ CORRECT:**
 
-\`\`\`json
-[
-  { "asset_name": "car", "description": "Vehicle driving on the road." },
-  { "asset_name": "Earth", "description": "Large sphere with blue and green texture." },
-  { "asset_name": "plane", "description": "Aircraft flying above the clouds." },
-  { "asset_name": "pendulum", "description": "Swinging back and forth." }
-]
-\`\`\`
+// \`\`\`json
+// [
+//   { "asset_name": "car", "description": "Vehicle driving on the road." },
+//   { "asset_name": "Earth", "description": "Large sphere with blue and green texture." },
+//   { "asset_name": "plane", "description": "Aircraft flying above the clouds." },
+//   { "asset_name": "pendulum", "description": "Swinging back and forth." }
+// ]
+// \`\`\`
 
-**Analyze the attached input and generate the JSON list now:** ${this.description}`)
-            console.log(modelReq.response.text())
+// **Analyze the attached input and generate the JSON list now:** ${this.description}`)
+//             console.log(modelReq.response.text())
             this.checkpoint = 1;
           case 1:
               this.switchDebugState(false);
